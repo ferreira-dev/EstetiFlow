@@ -1,0 +1,29 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('servicos', function (Blueprint $table) {
+            $table->id();
+            $table->string('nome', 150);
+            $table->text('descricao')->nullable();
+            $table->enum('categoria', [
+                'cabelo', 'barba', 'manicure', 'pedicure',
+                'sobrancelha', 'cilio', 'estetica', 'massagem',
+                'maquiagem', 'depilacao', 'hidratacao', 'outro',
+            ]);
+            $table->boolean('ativo')->default(true);
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('servicos');
+    }
+};
