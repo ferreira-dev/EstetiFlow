@@ -69,9 +69,9 @@
             <div class="text-center">
                 <p class="text-sm text-zinc-400">
                     Não tem uma conta?
-                    <a href="#" class="font-semibold transition-colors hover:text-white" style="color: var(--p-primary-color)">
+                    <Link href="/registro" class="font-semibold transition-colors hover:text-white" style="color: var(--p-primary-color)">
                         Cadastre-se
-                    </a>
+                    </Link>
                 </p>
             </div>
         </div>
