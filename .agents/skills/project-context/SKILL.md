@@ -102,19 +102,27 @@ app/
 │   │   ├── HomeController.php
 │   │   ├── EstabelecimentoController.php
 │   │   ├── AgendamentoController.php
-│   │   └── Auth/LoginController.php
+│   │   ├── Auth/
+│   │   │   ├── LoginController.php
+│   │   │   └── RegistroController.php
+│   │   └── Profissional/
+│   │       ├── ProfissionalController.php   # gestão do estabelecimento
+│   │       └── ServicoController.php        # CRUD de serviços do profissional
 │   └── Middleware/
-│       └── HandleInertiaRequests.php   # compartilha auth global
+│       └── HandleInertiaRequests.php   # compartilha auth + roles global
 ├── Models/
-│   ├── User.php
+│   ├── User.php                       # HasRoles (Spatie Permission)
 │   ├── Estabelecimento.php
+│   ├── Profissional.php
 │   ├── Servico.php
-│   └── Agendamento.php
+│   ├── ServicoProfissional.php
+│   ├── Agendamento.php
+│   └── ...                            # demais 14 tabelas
 ├── Services/
 │   ├── EstabelecimentoService.php
 │   └── AgendamentoService.php
 routes/
-│   └── web.php                        # rotas Inertia
+│   └── web.php                        # rotas Inertia (públicas + auth + profissional)
 resources/
 ├── css/
 │   └── app.css                        # design system (dark mode, glassmorphism)
@@ -122,10 +130,13 @@ resources/
 │   ├── app.js                         # bootstrap Inertia + PrimeVue
 │   ├── Components/
 │   │   ├── Features/                  # AgendamentoCard, ServicoItem, etc.
-│   │   └── Layout/                    # AppHeader, AppFooter, AppSidebar
+│   │   ├── Layout/                    # AppHeader, AppFooter, AppSidebar
+│   │   └── Profissional/              # ServicoFormDialog
 │   ├── Constants/                     # categorias.js
-│   ├── Layouts/                       # DefaultLayout.vue, AuthLayout.vue
-│   ├── Pages/                         # Home.vue, Login.vue, Estabelecimentos.vue, etc.
+│   ├── Layouts/                       # DefaultLayout, AuthLayout, DashboardLayout
+│   ├── Pages/
+│   │   ├── Home.vue, Login.vue, Registro.vue, Estabelecimentos.vue, etc.
+│   │   └── Profissional/              # Estabelecimento.vue, Servicos.vue
 │   └── Utils/                         # formatters.js
 └── views/
     └── app.blade.php                  # template raiz Inertia
@@ -283,7 +294,7 @@ Inserção nas tabelas:
 
 ### Entities/Models Principais
 
-> **📖 Documentação completa do schema:** Consulte `.agent/skills/database-schema/SKILL.md`
+> **📖 Documentação completa do schema:** Consulte `.agents/skills/saas-database-schema/SKILL.md`
 > para ver todas as tabelas, tipos de dados, relacionamentos e regras de negócio detalhadas.
 
 O projeto possui **14 tabelas** organizadas em **5 módulos**:
@@ -671,15 +682,13 @@ Antes de considerar uma feature completa:
 
 ---
 
-## 🚀 Próximos Passos do MVP
-
-## 🚀 Próximos Passos e Estado Atual do MVP
+## 🚀 Estado Atual e Próximos Passos do MVP
 
 ### 0. Arquitetura de Banco de Dados (14 tabelas, 5 módulos)
 
 > **📖 Documentação completa e autoritativa do schema:**
-> Consulte `.agent/skills/database-schema/SKILL.md` para ver todas as tabelas com
-> tipos de dados detalhados, relacionamentos, regras de negócio e correspondência com o mock atual.
+> Consulte `.agents/skills/saas-database-schema/SKILL.md` para ver todas as tabelas com
+> tipos de dados detalhados, relacionamentos, regras de negócio e correspondência com os seeders.
 
 A arquitetura foi projetada para **MySQL 8.0 / MariaDB** com visão de longo prazo:
 
@@ -695,65 +704,66 @@ A arquitetura foi projetada para **MySQL 8.0 / MariaDB** com visão de longo pra
 
 ### 1. Estado Atual — O que foi implementado vs O que falta
 
-#### ✅ Implementado (compatível com a arquitetura)
-| Funcionalidade | Arquivo(s) | Tabelas que consome | Status |
-|---------------|-----------|---------------------|--------|
-| Listagem de estabelecimentos | `EstabelecimentosPage.vue`, `EstabelecimentoCard.vue` | `estabelecimentos` | ✅ Funcional (dados mock) |
-| Detalhe do estabelecimento | `EstabelecimentoDetailPage.vue` | `estabelecimentos`, `servicos` | ✅ Funcional |
-| Listagem de serviços por estabelecimento | `ServicoItem.vue` | `servicos` | ✅ Funcional |
-| Busca de estabelecimentos (nome/categoria) | `SearchBar.vue`, `EstabelecimentosPage.vue` | `estabelecimentos`, `servicos` | ✅ Funcional |
-| Login simples (email/senha) | `LoginPage.vue`, `stores/auth.js` | `usuarios` | ✅ Mock (localStorage) |
-| Fluxo de agendamento (calendário + horários) | `ServicoItem.vue` (Drawer) | `agendamentos` | ✅ Funcional via JSON Server |
-| Listagem de agendamentos (confirmados/finalizados) | `AgendamentosPage.vue`, `AgendamentoCard.vue` | `agendamentos` | ✅ Funcional |
+#### ✅ Implementado e funcional
+| Funcionalidade | Arquivo(s) | Tabelas | Status |
+|---------------|-----------|---------|--------|
+| Listagem de estabelecimentos | `Estabelecimentos.vue`, `EstabelecimentoCard.vue` | `estabelecimentos` | ✅ Funcional (seeders) |
+| Detalhe do estabelecimento | `EstabelecimentoDetail.vue` | `estabelecimentos`, `profissionais`, `servicos_profissionais` | ✅ Funcional |
+| Listagem de serviços por profissional | `ServicoItem.vue` | `servicos`, `servicos_profissionais` | ✅ Funcional |
+| Busca de estabelecimentos (nome/categoria) | `SearchBar.vue`, `Estabelecimentos.vue` | `estabelecimentos`, `servicos` | ✅ Funcional |
+| Login real (email/senha) | `Login.vue`, `LoginController.php` | `usuarios` | ✅ `Auth::attempt` + sessão |
+| Redirect pós-login por role | `LoginController.php` | `usuarios`, `model_has_roles` | ✅ Profissional → `/profissional/estabelecimento` |
+| Registro (cliente + profissional) | `Registro.vue`, `RegistroController.php` | `usuarios`, `perfis`, `profissionais` | ✅ Funcional (Spatie Permission) |
+| Cadastro de estabelecimento pelo profissional | `Profissional/Estabelecimento.vue`, `ProfissionalController.php` | `estabelecimentos`, `profissionais` | ✅ Funcional |
+| CRUD de serviços do profissional | `Profissional/Servicos.vue`, `ServicoFormDialog.vue`, `ServicoController.php` | `servicos`, `servicos_profissionais` | ✅ Funcional (catálogo + criação) |
+| DashboardLayout (painel profissional) | `DashboardLayout.vue` | — | ✅ Menu lateral com "Meu Estabelecimento" e "Meus Serviços" |
+| Menu condicional "Painel Profissional" | `AppHeader.vue`, `AppSidebar.vue` | `auth.roles` | ✅ Visível apenas para role `profissional` |
+| Fluxo de agendamento (calendário + horários) | `ServicoItem.vue` (Drawer) | `agendamentos` | ✅ Funcional |
+| Listagem de agendamentos | `Agendamentos.vue`, `AgendamentoCard.vue` | `agendamentos` | ✅ Funcional |
 | Cancelamento de agendamento | `AgendamentoCard.vue` (ConfirmDialog) | `agendamentos` | ✅ Funcional |
-| Estatísticas do usuário (total investido, favorito) | `AgendamentosPage.vue`, `stores/agendamentos.js` | `agendamentos` | ✅ Computed localmente |
 | Categorias de serviço | `categorias.js`, `CategoriaItem.vue` | `servicos.categoria` | ✅ Constantes locais |
-| Navegação completa (router + layouts + auth guard) | `router/index.js`, `App.vue`, `DefaultLayout.vue`, `AuthLayout.vue` | — | ✅ Funcional |
 | Header/Footer/Sidebar responsivos | `AppHeader.vue`, `AppFooter.vue`, `AppSidebar.vue` | — | ✅ Funcional |
+| Schema completo (14 tabelas) | Migrations + Models + Seeders | Todas | ✅ Migrations executadas |
+| Spatie Permission (roles + permissions) | `User.php` + seeders | `roles`, `permissions`, `model_has_roles` | ✅ 3 roles: admin, profissional, cliente |
 
 #### ⚠️ Parcialmente implementado — Precisa adequar
 | Funcionalidade | O que falta | Tabelas envolvidas |
 |---------------|------------|-------------------|
-| **Profissionais** | Frontend não exibe profissionais individuais. Atualmente os serviços são vinculados diretamente ao estabelecimento. Na arquitetura real, o fluxo é: Estabelecimento → Profissional → Serviço (via `servicos_profissionais`). Criar componente `ProfissionalCard.vue` e adaptar `ServicoItem.vue` para exibir o profissional vinculado. | `profissionais`, `servicos_profissionais` |
-| **Horários de funcionamento** | Os horários estão hardcoded em `EstabelecimentoDetailPage.vue`. Devem vir de `horarios_funcionamento` (por profissional, não por estabelecimento). Também impacta o cálculo de slots no `ServicoItem.vue`. | `horarios_funcionamento` |
-| **Cálculo de disponibilidade** | O filtro de horários disponíveis em `ServicoItem.vue` é simplificado. Na arquitetura real, precisa consultar: horários do profissional + bloqueios + agendamentos existentes + tempo de execução do serviço. | `horarios_funcionamento`, `bloqueios_agenda`, `agendamentos`, `servicos_profissionais` |
-| **Status detalhado de agendamentos** | Frontend usa apenas `confirmado`/`finalizado`. A arquitetura prevê 7 status (pendente, confirmado, em_atendimento, concluido, cancelado_cliente, cancelado_profissional, nao_compareceu). Adaptar `AgendamentoCard.vue`. | `agendamentos.status` |
-| **Dados do agendamento** | Mock atual salva dados denormalizados (servico/estabelecimento inline). Na arquitetura real usa `itens_agendamentos` com snapshot de preço + `profissional_id`. | `agendamentos`, `itens_agendamentos` |
-| **Autenticação** | Login é 100% mock (aceita qualquer email/senha). Precisa de JWT real + diferenciação de perfil (cliente/profissional/admin). | `usuarios` |
-| **Geolocalização** | Não implementada. Arquitetura tem lat/lng em `estabelecimentos`. Precisa de `useGeolocation.js` composable e busca por proximidade. | `estabelecimentos.latitude`, `estabelecimentos.longitude` |
+| **Exibição de profissionais no detalhe público** | O detalhe do estabelecimento lista os profissionais e seus serviços via pivot, mas o fluxo de agendamento ainda não seleciona o profissional explicitamente antes do horário. | `profissionais`, `servicos_profissionais` |
+| **Horários de funcionamento** | Os horários estão hardcoded em `EstabelecimentoDetail.vue`. Devem vir de `horarios_funcionamento` (por profissional). Também impacta o cálculo de slots. | `horarios_funcionamento` |
+| **Cálculo de disponibilidade** | Precisa consultar: horários do profissional + bloqueios + agendamentos existentes + tempo de execução do serviço. | `horarios_funcionamento`, `bloqueios_agenda`, `agendamentos`, `servicos_profissionais` |
+| **Status detalhado de agendamentos** | Frontend usa status simplificado. A arquitetura prevê 7 status. Adaptar `AgendamentoCard.vue`. | `agendamentos.status` |
+| **Geolocalização** | Colunas lat/lng existem nas tabelas. Falta implementar busca por proximidade no frontend/backend. | `estabelecimentos.latitude`, `estabelecimentos.longitude` |
 
 #### ❌ Não implementado — Criar do zero
 | Funcionalidade | Tabelas envolvidas | Prioridade |
 |---------------|-------------------|-----------|
-| **Dashboard do Profissional** — painel com agenda do dia, próximos atendimentos, estatísticas | `agendamentos`, `profissionais`, `servicos_profissionais` | 🔴 Alta |
-| **Gestão de Serviços** — CRUD de serviços pelo profissional (nome, preço, tempo) | `servicos`, `servicos_profissionais` | 🔴 Alta |
-| **Configuração de Horários** — grade de funcionamento semanal | `horarios_funcionamento` | 🔴 Alta |
+| **Configuração de Horários** — grade de funcionamento semanal pelo profissional | `horarios_funcionamento` | 🔴 Alta |
+| **Dashboard do Profissional** — agenda do dia, próximos atendimentos, estatísticas | `agendamentos`, `profissionais` | 🔴 Alta |
 | **Gestão de Bloqueios** — marcar férias, folgas, intervalos | `bloqueios_agenda` | 🟡 Média |
 | **Relatório Financeiro** — visualização por dia/semana/mês | `relatorios_financeiros`, `agendamentos`, `itens_agendamentos` | 🟡 Média |
-| **Tela de Registro** — cadastro de novos usuários (cliente e profissional) | `usuarios`, `perfis` | 🔴 Alta |
 | **Página de Perfil** — editar dados pessoais, endereço, foto | `perfis` | 🟡 Média |
 | **Avaliações** — nota + comentário pós-serviço | `avaliacoes` | 🟢 Baixa (pós-MVP) |
 | **Notificações** — lembretes e avisos | `notificacoes` | 🟢 Baixa (pós-MVP) |
-| **DashboardLayout.vue** — layout exclusivo para painel do profissional | — | 🔴 Alta |
 
 ---
 
-### 2. Estratégia de Dados — Mock → API Real
+### 2. Estratégia de Dados
 
-#### Estado Atual (Laravel + Inertia + Seeders)
-- **Controllers + Services** (PHP) entregam dados via `Inertia::render()` como props
-- **Seeders** (`DatabaseSeeder.php`) populam as 4 tabelas MVP com os mesmos dados do antigo `db.json`
-- **Autenticação** → `Auth::attempt()` com sessão Laravel (sem JWT, sem localStorage)
+#### Estado Atual (Laravel + Inertia + MySQL)
+- **Monolito completo** — Controllers + Services (PHP) entregam dados via `Inertia::render()` como props
+- **Banco de dados real** — 14 tabelas com migrations executadas, seeders com dados ricos
+- **Autenticação real** — `Auth::attempt()` com sessão Laravel + Spatie Permission (roles & permissions)
 - **Dados estáticos** mantidos inline:
-  - Horários de funcionamento → hardcoded em `EstabelecimentoDetail.vue` (até implementar `horarios_funcionamento`)
-  - Categorias de serviço → `Constants/categorias.js`
+  - Categorias de serviço → `Constants/categorias.js` (enum no banco, constantes no frontend)
+  - Horários de funcionamento → hardcoded em `EstabelecimentoDetail.vue` (até implementar tela de gestão)
 - **Vite** (node container) serve assets em desenvolvimento, `laravel-vite-plugin` integra com Blade
 
 #### Próximos Passos de Dados
-1. **Expandir para schema completo** — criar migrations para as 14 tabelas (ver `database-schema/SKILL.md`)
-2. **Profissionais** — adicionar tabela `profissionais` e `servicos_profissionais`
-3. **Horários de funcionamento** — tabela `horarios_funcionamento` por profissional
-4. **Cálculo de disponibilidade real** — baseado em horários + bloqueios + agendamentos existentes
+1. **Configuração de Horários** — tela para profissional cadastrar grade semanal (`horarios_funcionamento`)
+2. **Cálculo de disponibilidade real** — baseado em horários + bloqueios + agendamentos existentes
+3. **Aprimorar fluxo de agendamento** — selecionar profissional, snapshot de preço em `itens_agendamentos`
+4. **Geolocalização** — busca por proximidade usando lat/lng do `estabelecimentos`
 
 ---
 
@@ -762,39 +772,32 @@ A arquitetura foi projetada para **MySQL 8.0 / MariaDB** com visão de longo pra
 #### ✅ Concluído
 - Arquitetura frontend Vue 3 + PrimeVue + Tailwind CSS
 - Migração para monolito Laravel 11 + Inertia.js
-- Controllers + Services + Seeders (dados MVP)
-- Autenticação via sessão Laravel
+- Schema completo (14 tabelas com migrations, models, relationships)
+- Seeders com dados ricos (estabelecimentos, profissionais, serviços, agendamentos, horários)
+- Autenticação real via sessão Laravel + Spatie Permission (3 roles)
+- Registro de cliente e profissional (`Registro.vue` + `RegistroController`)
+- Cadastro de estabelecimento pelo profissional (`Profissional/Estabelecimento.vue`)
+- CRUD de serviços do profissional (`Profissional/Servicos.vue` + `ServicoController`)
+- DashboardLayout com menu lateral (Meu Estabelecimento + Meus Serviços)
+- Login com redirect condicional por role
+- Menu "Painel Profissional" condicional no header e sidebar
 - 6 containers Docker (webserver, php-fpm, node, mysql, redis, mailhog)
 
-#### Fase Atual: Schema Completo (14 tabelas)
-1. Criar migrations para as 14 tabelas do schema completo
-2. Criar Models com relationships Eloquent
-3. Expandir seeders para dados mais ricos
+#### Fase Atual: Completar Painel do Profissional
+1. Configurar grade de horários semanal (`horarios_funcionamento`)
+2. Criar dashboard com agenda do dia e próximos atendimentos
+3. Bloqueios de agenda (férias, folgas)
 
-#### Próxima Fase: Autenticação e Registro
-1. Criar `Pages/Registro.vue` (cadastro de cliente)
-2. Criar `Pages/RegistroProfissional.vue` (profissional + estabelecimento)
-3. Diferenciar perfis (cliente/profissional/admin) via `usuarios.tipo`
-4. Middleware Laravel por perfil
-
-#### Fase: Dashboard do Profissional
-1. Criar `Layouts/DashboardLayout.vue`
-2. Criar `Pages/Dashboard.vue` (agenda do dia, próximos atendimentos)
-3. CRUD de serviços (`servicos_profissionais`)
-4. Configurar grade semanal (`horarios_funcionamento`)
-5. Bloqueios de agenda (`bloqueios_agenda`)
-
-#### Fase: Aprimoramento do Fluxo de Agendamento
-1. Selecionar profissional antes do horário
+#### Próxima Fase: Aprimorar Fluxo de Agendamento
+1. Selecionar profissional antes do horário no detalhe do estabelecimento
 2. Cálculo real de disponibilidade (horários - bloqueios - agendamentos - tempo execução)
 3. Usar `itens_agendamentos` para snapshot de preço
 4. Implementar 7 status com transições válidas
 
 #### Fase: Relatórios e Engajamento
-1. `RelatorioFinanceiroPage.vue`
-2. Jobs para `relatorios_financeiros`
-3. Geolocalização (busca por proximidade)
-4. Avaliações pós-serviço + notificações
+1. `RelatorioFinanceiro` — page + jobs para `relatorios_financeiros`
+2. Geolocalização (busca por proximidade)
+3. Avaliações pós-serviço + notificações
 
 #### Fase: Polimento
 1. PWA (manifest, service worker)
@@ -809,12 +812,14 @@ A arquitetura foi projetada para **MySQL 8.0 / MariaDB** com visão de longo pra
 |---------|---------|---------------|
 | Dark mode | `.dark-mode` class-based | Escalável para troca de tema via config |
 | Arquitetura | Monolito Laravel + Inertia.js | Complexidade gerenciável, SSR nativo futuro |
-| Autenticação | Sessão Laravel (não JWT) | Mais simples com Inertia; JWT quando API pública |
+| Autenticação | Sessão Laravel + Spatie Permission | Mais simples com Inertia; JWT apenas quando API pública |
 | State Management | Inertia props + `usePage()` | Elimina Pinia e Axios; dados sempre frescos do server |
+| Roles & Permissions | Spatie `laravel-permission` | Padrão Laravel, flexível, sem reinventar a roda |
 | Nomenclatura | PT-BR em todo projeto | Consistência com banco e público-alvo |
-| Ícones | Lucide + PrimeIcons | Lucide para customizados, PrimeIcons para integração PrimeVue |
+| Ícones | PrimeIcons (exclusivo) | Regra do projeto: proibido FontAwesome, Heroicons, etc. |
 | Design system | Glassmorphism + stat cards + Aura | Premium, moderno, dark-first |
 | Mock de dados | Seeders Laravel | Dados no banco real em vez de JSON Server |
+| Serviços | Catálogo global + criação pelo profissional | Abordagem híbrida: selecionar existente OU criar novo |
 | Referência visual | Projeto React BarberLab | Figma com acesso protegido (403) |
 
 ---

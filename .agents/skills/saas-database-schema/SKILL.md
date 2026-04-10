@@ -7,7 +7,7 @@ description: Documentação completa e autoritativa do schema de banco de dados 
 
 > **⚠️ IMPORTANTE:** Esta é a fonte de verdade do schema de banco de dados do projeto.
 > Qualquer alteração no schema deve ser discutida com base nesta documentação e executada
-> seguindo a skill de arquitetura: `.agent/skills/database-architecture/SKILL.md`.
+> seguindo a skill de arquitetura: `.agents/skills/database-architecture/SKILL.md`.
 
 ---
 
@@ -416,7 +416,7 @@ Os seeders em `database/seeders/DatabaseSeeder.php` populam as 4 tabelas MVP com
 ## 📝 Notas para Futuras Alterações
 
 > Antes de propor qualquer alteração neste schema, consulte a skill de arquitetura:
-> `.agent/skills/database-architecture/SKILL.md`
+> `.agents/skills/database-architecture/SKILL.md`
 >
 > Toda mudança deve ser justificada por uma regra de negócio clara e avaliada
 > quanto ao impacto nos relacionamentos existentes.
