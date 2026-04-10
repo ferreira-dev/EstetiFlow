@@ -67,12 +67,12 @@
                         aria-controls="menu-usuario"
                     >
                         <Avatar
-                            :label="$page.props.auth.user.nome?.charAt(0)?.toUpperCase()"
+                            :label="$page.props.auth.user.nome_completo?.charAt(0)?.toUpperCase()"
                             shape="circle"
                             class="mr-2"
                             size="small"
                         />
-                        <span class="text-sm">{{ $page.props.auth.user.nome }}</span>
+                        <span class="text-sm">{{ $page.props.auth.user.nome_completo }}</span>
                         <i class="pi pi-chevron-down ml-2 text-xs"></i>
                     </Button>
                     <Menu
@@ -106,8 +106,8 @@
 </template>
 
 <script setup>
-import { ref, nextTick, watch } from 'vue'
-import { Link, router } from '@inertiajs/vue3'
+import { ref, computed, nextTick, watch } from 'vue'
+import { Link, router, usePage } from '@inertiajs/vue3'
 import Button from 'primevue/button'
 import Avatar from 'primevue/avatar'
 import Menu from 'primevue/menu'
@@ -151,23 +151,39 @@ function fecharBusca() {
 const sidebarVisivel = ref(false)
 
 // Menu do usuário
+const page = usePage()
 const menuUsuarioRef = ref(null)
 
 function toggleMenuUsuario(event) {
     menuUsuarioRef.value.toggle(event)
 }
 
-const opcoesMenuUsuario = [
-    {
-        label: 'Meus Agendamentos',
-        icon: 'pi pi-calendar',
-        command: () => router.visit('/agendamentos')
-    },
-    { separator: true },
-    {
-        label: 'Sair',
-        icon: 'pi pi-sign-out',
-        command: () => router.post('/logout')
-    }
-]
+// Constrói o menu dinamicamente conforme os roles do usuário logado
+const opcoesMenuUsuario = computed(() => {
+    const roles = page.props.auth?.roles ?? []
+    const isProfissional = roles.includes('profissional')
+
+    return [
+        // Visível apenas para profissionais
+        ...(isProfissional ? [
+            {
+                label: 'Painel Profissional',
+                icon: 'pi pi-building',
+                command: () => router.visit('/profissional/estabelecimento')
+            },
+            { separator: true }
+        ] : []),
+        {
+            label: 'Meus Agendamentos',
+            icon: 'pi pi-calendar',
+            command: () => router.visit('/agendamentos')
+        },
+        { separator: true },
+        {
+            label: 'Sair',
+            icon: 'pi pi-sign-out',
+            command: () => router.post('/logout')
+        }
+    ]
+})
 </script>

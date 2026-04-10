@@ -25,7 +25,12 @@ class LoginController extends Controller
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
-            return redirect()->intended(route('home'));
+
+            $destino = Auth::user()->hasRole('profissional')
+                ? route('profissional.estabelecimento')
+                : route('home');
+
+            return redirect()->intended($destino);
         }
 
         return back()->withErrors([

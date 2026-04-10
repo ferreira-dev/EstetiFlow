@@ -9,11 +9,11 @@
             <template v-if="$page.props.auth?.user">
                 <div class="flex items-center gap-3">
                     <Avatar
-                        :label="$page.props.auth.user.nome?.charAt(0)?.toUpperCase()"
+                        :label="$page.props.auth.user.nome_completo?.charAt(0)?.toUpperCase()"
                         shape="circle"
                     />
                     <div>
-                        <p class="font-semibold text-white">{{ $page.props.auth.user.nome }}</p>
+                        <p class="font-semibold text-white">{{ $page.props.auth.user.nome_completo }}</p>
                         <p class="text-xs text-zinc-400">{{ $page.props.auth.user.email }}</p>
                     </div>
                 </div>
@@ -28,6 +28,16 @@
 
         <!-- Navegação -->
         <div class="flex flex-col gap-1 border-b border-white/10 py-4">
+            <!-- Link para o painel profissional (apenas profissionais) -->
+            <Link
+                v-if="isProfissional"
+                href="/profissional/estabelecimento"
+                @click="fechar"
+                class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-300 transition-colors hover:bg-white/5 hover:text-white"
+            >
+                <i class="pi pi-building text-base"></i>
+                Painel Profissional
+            </Link>
             <Link
                 v-for="item in navItems"
                 :key="item.rota"
@@ -71,7 +81,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { Link, router } from '@inertiajs/vue3'
+import { Link, router, usePage } from '@inertiajs/vue3'
 import { CATEGORIAS_SERVICO } from '@/Constants/categorias'
 import Drawer from 'primevue/drawer'
 import Avatar from 'primevue/avatar'
@@ -92,6 +102,11 @@ const navItems = [
     { titulo: 'Estabelecimentos', rota: '/estabelecimentos', icone: 'pi pi-building' },
     { titulo: 'Agendamentos', rota: '/agendamentos', icone: 'pi pi-calendar' }
 ]
+
+const page = usePage()
+const isProfissional = computed(() =>
+    (page.props.auth?.roles ?? []).includes('profissional')
+)
 
 const categorias = CATEGORIAS_SERVICO.slice(0, 6)
 
