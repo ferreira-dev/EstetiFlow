@@ -6,6 +6,7 @@ use App\Http\Controllers\AgendamentoController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegistroController;
 use App\Http\Controllers\Profissional\ProfissionalController;
+use App\Http\Controllers\Profissional\ServicoController;
 use Illuminate\Support\Facades\Route;
 
 // Públicas
@@ -34,4 +35,10 @@ Route::middleware(['auth', 'role:profissional'])
     ->group(function () {
         Route::get('/estabelecimento', [ProfissionalController::class, 'estabelecimento'])->name('estabelecimento');
         Route::post('/estabelecimento', [ProfissionalController::class, 'salvarEstabelecimento'])->name('estabelecimento.salvar');
+
+        // Serviços do profissional
+        Route::get('/servicos', [ServicoController::class, 'index'])->name('servicos');
+        Route::post('/servicos', [ServicoController::class, 'store'])->name('servicos.store');
+        Route::put('/servicos/{id}', [ServicoController::class, 'update'])->name('servicos.update');
+        Route::delete('/servicos/{id}', [ServicoController::class, 'destroy'])->name('servicos.destroy');
     });

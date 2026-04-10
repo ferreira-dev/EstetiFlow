@@ -103,9 +103,9 @@ const userInitials = computed(() => {
 
 const navItems = [
     { href: '/profissional/estabelecimento', icon: 'pi pi-building', label: 'Meu Estabelecimento' },
+    { href: '/profissional/servicos', icon: 'pi pi-list', label: 'Meus Serviços' },
     // Futuras entradas:
     // { href: '/profissional/agenda', icon: 'pi pi-calendar', label: 'Agenda' },
-    // { href: '/profissional/servicos', icon: 'pi pi-list', label: 'Serviços' },
     // { href: '/profissional/financeiro', icon: 'pi pi-chart-bar', label: 'Financeiro' },
 ]
 

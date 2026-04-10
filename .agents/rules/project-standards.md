@@ -9,7 +9,8 @@ Este documento define as diretrizes obrigatórias para o desenvolvimento, comuni
 ## 0. Regras Gerais
 - Nunca em hipótese alguma rode um "rm -rf" ou qualquer tipo de ação que exclua arquivos ou pastas sem minha permissão, principalmente arquivos não versionados.
 - o projeto está dockerizado com docker compose, logo comandos gerais de criação de arquivos e diretórios podem ser no terminal do host
-porém comandos de npm devem ser feitos dentro do conteiner após acessá-lo: "docker compose exec app sh"
+porém comandos de npm devem ser feitos dentro do conteiner após acessá-lo: "docker compose exec node sh"
+lembrando que para executar comandos docker com precisão, analise o arquivo docker-compose ou rode "docker compose ps" para saber o nome dos containers e demais informações que julgar necessário.
 
 ## 1. Idioma e Comunicação
 - **Planejamento e Tarefas:** Todas as criações de tasks, checklists e documentos de planejamento devem ser redigidos em **Português (PT-BR)**.
