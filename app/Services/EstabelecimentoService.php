@@ -30,7 +30,7 @@ class EstabelecimentoService
     }
 
     /**
-     * Busca um estabelecimento com seus profissionais e serviços ativos.
+     * Busca um estabelecimento com profissionais, serviços, horários e bloqueios ativos.
      */
     public function buscarComServicos(int $id): ?Estabelecimento
     {
@@ -40,6 +40,13 @@ class EstabelecimentoService
                     ->with([
                         'servicosProfissionais' => fn($q2) => $q2->where('ativo', true)
                             ->with('servico'),
+                        'horariosFuncionamento',
+                        // Só carrega bloqueios relevantes: recorrentes + não expirados
+                        'bloqueiosAgenda' => fn($q3) => $q3->where(
+                            fn($q4) => $q4
+                                ->where('recorrente', true)
+                                ->orWhere('data_fim', '>=', now())
+                        ),
                     ]),
             ])
             ->findOrFail($id);

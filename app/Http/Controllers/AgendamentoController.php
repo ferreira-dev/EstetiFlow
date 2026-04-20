@@ -34,9 +34,13 @@ class AgendamentoController extends Controller
             'nome_servico'           => ['required', 'string', 'max:150'],
         ]);
 
-        $this->service->criar(array_merge($validated, [
-            'cliente_id' => $request->user()->id,
-        ]));
+        try {
+            $this->service->criar(array_merge($validated, [
+                'cliente_id' => $request->user()->id,
+            ]));
+        } catch (\RuntimeException $e) {
+            return back()->withErrors(['data_hora_inicio' => $e->getMessage()]);
+        }
 
         return redirect()->route('agendamentos')->with('success', 'Reserva criada com sucesso!');
     }

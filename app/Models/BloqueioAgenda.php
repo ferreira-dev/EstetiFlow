@@ -15,11 +15,17 @@ class BloqueioAgenda extends Model
         'data_fim',
         'motivo',
         'tipo',
+        'recorrente',
+        'hora_inicio',
+        'hora_fim',
+        'dias_semana',
     ];
 
     protected $casts = [
         'data_inicio' => 'datetime',
         'data_fim'    => 'datetime',
+        'recorrente'  => 'boolean',
+        'dias_semana' => 'array',   // JSON → PHP array automaticamente
     ];
 
     public function profissional(): BelongsTo

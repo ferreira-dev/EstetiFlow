@@ -31,8 +31,20 @@ class EstabelecimentoController extends Controller
     {
         $estabelecimento = $this->service->buscarComServicos($id);
 
+        // Agrega horários de todos os profissionais (união por dia da semana)
+        $horariosFuncionamento = collect($estabelecimento->profissionais)
+            ->flatMap(fn($p) => $p->horarios_funcionamento ?? collect())
+            ->groupBy(fn($h) => $h->dia_semana)
+            ->map(fn($grupo, $dia) => [
+                'dia_semana'  => (int) $dia,
+                'hora_inicio' => $grupo->map(fn($h) => $h->hora_inicio)->min(),
+                'hora_fim'    => $grupo->map(fn($h) => $h->hora_fim)->max(),
+            ])
+            ->values();
+
         return Inertia::render('EstabelecimentoDetail', [
-            'estabelecimento' => $estabelecimento,
+            'estabelecimento'       => $estabelecimento,
+            'horariosFuncionamento' => $horariosFuncionamento,
         ]);
     }
 }

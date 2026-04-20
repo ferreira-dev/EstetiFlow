@@ -99,6 +99,8 @@
                                     :nome-estabelecimento="estabelecimento.nome_fantasia"
                                     :estabelecimento-id="estabelecimento.id"
                                     :profissional-id="prof.id"
+                                    :horarios-funcionamento="prof.horarios_funcionamento ?? []"
+                                    :bloqueios="prof.bloqueios_agenda ?? []"
                                 />
                             </template>
                         </div>
@@ -201,7 +203,8 @@ import DefaultLayout from '@/Layouts/DefaultLayout.vue'
 defineOptions({ layout: DefaultLayout })
 
 const props = defineProps({
-    estabelecimento: { type: Object, default: null },
+    estabelecimento:       { type: Object, default: null },
+    horariosFuncionamento: { type: Array,  default: () => [] },
 })
 
 const servicos = computed(() => {
@@ -220,15 +223,23 @@ const caracteristicas = [
     'Produtos Premium', 'Ambiente Climatizado', 'Profissionais Qualificados'
 ]
 
-const horarios = {
-    'Segunda-feira': '08:00 - 18:00',
-    'Terça-feira': '08:00 - 18:00',
-    'Quarta-feira': '08:00 - 18:00',
-    'Quinta-feira': '08:00 - 18:00',
-    'Sexta-feira': '08:00 - 20:00',
-    'Sábado': '09:00 - 16:00',
-    'Domingo': 'Fechado'
+const DIAS_NOMES = {
+    0: 'Domingo', 1: 'Segunda-feira', 2: 'Terça-feira',
+    3: 'Quarta-feira', 4: 'Quinta-feira', 5: 'Sexta-feira', 6: 'Sábado',
 }
+
+// Constrói mapa de horários a partir da prop (dinâmico)
+const horarios = computed(() => {
+    const ordem = [1, 2, 3, 4, 5, 6, 0] // Seg → Dom
+    const mapa  = {}
+    ordem.forEach(dia => {
+        const h = props.horariosFuncionamento?.find(d => d.dia_semana === dia)
+        mapa[DIAS_NOMES[dia]] = h
+            ? `${h.hora_inicio.slice(0, 5)} - ${h.hora_fim.slice(0, 5)}`
+            : 'Fechado'
+    })
+    return mapa
+})
 
 function voltar() {
     window.history.back()
