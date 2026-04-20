@@ -7,6 +7,9 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegistroController;
 use App\Http\Controllers\Profissional\ProfissionalController;
 use App\Http\Controllers\Profissional\ServicoController;
+use App\Http\Controllers\Profissional\HorarioController;
+use App\Http\Controllers\Profissional\BloqueioController;
+use App\Http\Controllers\Profissional\AgendamentoProfissionalController;
 use Illuminate\Support\Facades\Route;
 
 // Públicas
@@ -36,9 +39,22 @@ Route::middleware(['auth', 'role:profissional'])
         Route::get('/estabelecimento', [ProfissionalController::class, 'estabelecimento'])->name('estabelecimento');
         Route::post('/estabelecimento', [ProfissionalController::class, 'salvarEstabelecimento'])->name('estabelecimento.salvar');
 
-        // Serviços do profissional
+        // Serviços
         Route::get('/servicos', [ServicoController::class, 'index'])->name('servicos');
         Route::post('/servicos', [ServicoController::class, 'store'])->name('servicos.store');
         Route::put('/servicos/{id}', [ServicoController::class, 'update'])->name('servicos.update');
         Route::delete('/servicos/{id}', [ServicoController::class, 'destroy'])->name('servicos.destroy');
+
+        // Horários de funcionamento
+        Route::get('/horarios', [HorarioController::class, 'index'])->name('horarios');
+        Route::post('/horarios', [HorarioController::class, 'salvar'])->name('horarios.salvar');
+
+        // Bloqueios de agenda
+        Route::get('/bloqueios', [BloqueioController::class, 'index'])->name('bloqueios');
+        Route::post('/bloqueios', [BloqueioController::class, 'store'])->name('bloqueios.store');
+        Route::delete('/bloqueios/{id}', [BloqueioController::class, 'destroy'])->name('bloqueios.destroy');
+
+        // Agendamentos do profissional
+        Route::get('/agendamentos', [AgendamentoProfissionalController::class, 'index'])->name('agendamentos.profissional');
+        Route::put('/agendamentos/{id}/status', [AgendamentoProfissionalController::class, 'alterarStatus'])->name('agendamentos.status');
     });

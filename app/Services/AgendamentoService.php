@@ -65,10 +65,10 @@ class AgendamentoService
 
             // Snapshot do serviço
             ItemAgendamento::create([
-                'agendamento_id'        => $agendamento->id,
-                'servico_id'            => $dados['servico_id'],
-                'nome_servico'          => $dados['nome_servico'],
-                'preco_praticado'       => $preco,
+                'agendamento_id'         => $agendamento->id,
+                'servico_id'             => $dados['servico_id'],
+                'nome_servico'           => $dados['nome_servico'],
+                'preco_praticado'        => $preco,
                 'tempo_execucao_minutos' => $tempoMinutos,
             ]);
 
@@ -98,8 +98,8 @@ class AgendamentoService
             $statusAnterior = $agendamento->status;
 
             $agendamento->update([
-                'status'            => 'cancelado_cliente',
-                'cancelado_por_id'  => $usuarioId,
+                'status'           => 'cancelado_cliente',
+                'cancelado_por_id' => $usuarioId,
             ]);
 
             HistoricoAgendamento::create([
@@ -110,6 +110,63 @@ class AgendamentoService
             ]);
 
             return true;
+        });
+    }
+
+    // ── Painel do Profissional ─────────────────────────────────────────────
+
+    /**
+     * Transições de status permitidas para o profissional.
+     */
+    private array $transicoesValidas = [
+        'pendente'       => ['confirmado', 'cancelado_profissional'],
+        'confirmado'     => ['em_atendimento', 'cancelado_profissional', 'nao_compareceu'],
+        'em_atendimento' => ['concluido'],
+    ];
+
+    /**
+     * Lista agendamentos do profissional com filtro opcional por status.
+     */
+    public function listarDoProfissional(int $profissionalId, ?string $status = null): Collection
+    {
+        return Agendamento::where('profissional_id', $profissionalId)
+            ->when($status && $status !== 'todos', fn($q) => $q->where('status', $status))
+            ->with(['cliente', 'itens'])
+            ->orderByDesc('data_hora_inicio')
+            ->get();
+    }
+
+    /**
+     * Altera o status de um agendamento respeitando as transições válidas.
+     *
+     * @throws \InvalidArgumentException quando a transição não é permitida.
+     */
+    public function alterarStatus(int $agendamentoId, int $profissionalId, string $novoStatus, int $userId): Agendamento
+    {
+        return DB::transaction(function () use ($agendamentoId, $profissionalId, $novoStatus, $userId) {
+            $agendamento = Agendamento::where('id', $agendamentoId)
+                ->where('profissional_id', $profissionalId)
+                ->firstOrFail();
+
+            $statusAtual = $agendamento->status;
+            $permitidos  = $this->transicoesValidas[$statusAtual] ?? [];
+
+            if (!in_array($novoStatus, $permitidos)) {
+                throw new \InvalidArgumentException(
+                    "Transição inválida: '{$statusAtual}' → '{$novoStatus}'."
+                );
+            }
+
+            $agendamento->update(['status' => $novoStatus]);
+
+            HistoricoAgendamento::create([
+                'agendamento_id'  => $agendamento->id,
+                'status_anterior' => $statusAtual,
+                'status_novo'     => $novoStatus,
+                'alterado_por_id' => $userId,
+            ]);
+
+            return $agendamento->refresh();
         });
     }
 }
