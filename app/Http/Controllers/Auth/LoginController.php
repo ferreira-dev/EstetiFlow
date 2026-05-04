@@ -27,7 +27,7 @@ class LoginController extends Controller
             $request->session()->regenerate();
 
             $destino = Auth::user()->hasRole('profissional')
-                ? route('profissional.estabelecimento')
+                ? route('profissional.dashboard')
                 : route('home');
 
             return redirect()->intended($destino);

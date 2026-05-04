@@ -102,11 +102,13 @@ const userInitials = computed(() => {
 })
 
 const navItems = [
+    { href: '/profissional/dashboard',     icon: 'pi pi-home',       label: 'Dashboard' },
     { href: '/profissional/estabelecimento', icon: 'pi pi-building', label: 'Meu Estabelecimento' },
-    { href: '/profissional/servicos', icon: 'pi pi-list', label: 'Meus Serviços' },
-    { href: '/profissional/horarios', icon: 'pi pi-clock', label: 'Meus Horários' },
-    { href: '/profissional/bloqueios', icon: 'pi pi-ban', label: 'Bloqueios' },
-    { href: '/profissional/agendamentos', icon: 'pi pi-calendar', label: 'Agendamentos' },
+    { href: '/profissional/servicos',      icon: 'pi pi-list',       label: 'Meus Serviços' },
+    { href: '/profissional/horarios',      icon: 'pi pi-clock',      label: 'Meus Horários' },
+    { href: '/profissional/bloqueios',     icon: 'pi pi-ban',        label: 'Bloqueios' },
+    { href: '/profissional/agendamentos',  icon: 'pi pi-calendar',   label: 'Agendamentos' },
+    { href: '/profissional/financeiro',    icon: 'pi pi-chart-bar',  label: 'Financeiro' },
 ]
 
 const pageTitle = computed(() => {

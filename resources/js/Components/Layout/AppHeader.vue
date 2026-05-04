@@ -169,10 +169,15 @@ const opcoesMenuUsuario = computed(() => {
             {
                 label: 'Painel Profissional',
                 icon: 'pi pi-building',
-                command: () => router.visit('/profissional/estabelecimento')
+                command: () => router.visit('/profissional/dashboard')
             },
             { separator: true }
         ] : []),
+        {
+            label: 'Meu Perfil',
+            icon: 'pi pi-user',
+            command: () => router.visit('/perfil')
+        },
         {
             label: 'Meus Agendamentos',
             icon: 'pi pi-calendar',

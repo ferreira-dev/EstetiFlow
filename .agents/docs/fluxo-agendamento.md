@@ -53,23 +53,31 @@
 | **Criar agendamento** | `POST /agendamentos` | Status vai direto para `confirmado`, pulando `pendente` intencionalmente no MVP |
 | **Cancelar pelo cliente** | `DELETE /agendamentos/{id}` | Grava `cancelado_cliente` + `HistoricoAgendamento` |
 | **Snapshot de preço** | `ItemAgendamento` | `nome_servico`, `preco_praticado` e `tempo_execucao_minutos` preservados no momento do agendamento |
-| **Auditoria de status** | `HistoricoAgendamento` | Ogni mudança de status grava `status_anterior`, `status_novo`, `alterado_por_id` |
+| **Auditoria de status** | `HistoricoAgendamento` | Cada mudança de status grava `status_anterior`, `status_novo`, `alterado_por_id` |
 | **Listagem do cliente** | `GET /agendamentos` | Eager load de `profissional.estabelecimento` e `itens` |
+| **Confirmar agendamento** | `PUT /profissional/agendamentos/{id}/status` | Profissional confirma via painel — `pendente → confirmado` |
+| **Recusar agendamento** | `PUT /profissional/agendamentos/{id}/status` | Profissional recusa — `pendente → cancelado_profissional` |
+| **Iniciar atendimento** | `PUT /profissional/agendamentos/{id}/status` | Profissional inicia — `confirmado → em_atendimento` |
+| **Concluir atendimento** | `PUT /profissional/agendamentos/{id}/status` | Profissional encerra — `em_atendimento → concluido` |
+| **Cancelar pelo profissional** | `PUT /profissional/agendamentos/{id}/status` | Profissional cancela — `confirmado → cancelado_profissional` |
+| **Marcar não compareceu** | `PUT /profissional/agendamentos/{id}/status` | Profissional marca — `confirmado → nao_compareceu` |
+| **Transições validadas** | `AgendamentoService::alterarStatus()` | Matriz de transições válidas impede saltos de status ilegais |
+| **Painel do profissional** | `GET /profissional/agendamentos` | Lista com filtro por status + ações contextuais por card |
+| **Disponibilidade real** | `AgendamentoService::verificarDisponibilidade()` | Valida: horário de funcionamento + bloqueios pontuais + bloqueios recorrentes + conflitos de agenda |
 
 ### ⚠️ Simplificações do MVP (a evoluir)
 
 | Situação | MVP atual | Comportamento futuro planejado |
 |----------|-----------|-------------------------------|
-| Status inicial | Criação vai direto para `confirmado` | `pendente` até profissional aceitar manualmente no painel |
-| `em_atendimento` | Não utilizado — sem painel do profissional | Profissional usa painel para dar início ao atendimento |
-| `concluido` | Só nos seeders / demanda ação do profissional | Profissional encerra o atendimento pelo painel |
-| `nao_compareceu` | Não utilizado | Profissional marca via painel ou job automático N horas após a data |
-| `cancelado_profissional` | Não utilizado | Profissional cancela pelo painel (Dashboard futuro) |
+| Status inicial | Criação vai direto para `confirmado` | `pendente` até profissional aceitar manualmente (infraestrutura já pronta no painel) |
+| `nao_compareceu` automático | Só via ação manual do profissional no painel | Job/queue que marca automaticamente N horas após a data passar |
+| Notificações | Não implementadas | Lembretes por push/email/SMS ao cliente e profissional |
+| Seleção de profissional no agendamento público | O `serviço_profissional_id` é inferido automaticamente (primeiro disponível) | Cliente escolhe explicitamente o profissional antes de selecionar o slot (Step 0 no Drawer) |
 
 ### ❌ Ainda não implementado
 
-- **Dashboard do profissional** — painel para confirmar, iniciar, encerrar e cancelar atendimentos
-- **Transição automática de status** — job/queue que marca `nao_compareceu` automaticamente quando data passa
+- **Seleção guiada de profissional** — Step 0 no `ServicoItem.vue` (Drawer) para o cliente escolher o profissional quando o serviço tiver múltiplos prestadores
+- **Transição automática de status** — job/queue que marca `nao_compareceu` automaticamente quando data passa sem ação
 - **Notificações** — lembretes por push/email/SMS ao cliente e profissional
 
 ---
@@ -96,15 +104,17 @@ Os seeders criaram agendamentos com datas passadas (ex: `2026-03-01`) e status `
 
 ### Labels e cores por status
 
-| Status | Label exibido | Cor semântica |
-|--------|--------------|---------------|
-| `pendente` | Pendente | Amarelo (warning) |
-| `confirmado` | Confirmado | Verde (primary) |
-| `em_atendimento` | Em Andamento | Azul (info) |
-| `concluido` | Concluído | Verde-escuro (success) |
-| `cancelado_cliente` | Cancelado | Vermelho (danger) |
-| `cancelado_profissional` | Cancelado pelo Profissional | Vermelho (danger) |
-| `nao_compareceu` | Não Compareceu | Laranja (warn) |
+> Implementado em `AgendamentoCard.vue` (visão do cliente) e `AgendamentosProfissional.vue` (visão do profissional).
+
+| Status | Label exibido | Cor semântica | Componente |
+|--------|--------------|---------------|------------|
+| `pendente` | Pendente | Amarelo (warning) | Ambos |
+| `confirmado` | Confirmado | Verde (success) | Ambos |
+| `em_atendimento` | Em Andamento | Azul (info) | Ambos |
+| `concluido` | Concluído | Cinza (secondary) | Ambos |
+| `cancelado_cliente` | Cancelado | Vermelho (danger) | Ambos |
+| `cancelado_profissional` | Cancelado pelo Profissional | Vermelho (danger) | Ambos |
+| `nao_compareceu` | Não Compareceu | Laranja (warn) | Ambos |
 
 ---
 
@@ -117,11 +127,29 @@ agendamentos
   └── avaliacoes                (pós-serviço — pós-MVP)
 ```
 
-Relacionamentos para exibição ao cliente:
+Relacionamentos para exibição ao **cliente** (`AgendamentoCard.vue`):
 ```
 agendamentos.profissional_id
   → profissionais.estabelecimento_id
     → estabelecimentos.nome_fantasia / foto_capa_url / logradouro...
 agendamentos.itens
   → itens_agendamentos.nome_servico / preco_praticado
+```
+
+Relacionamentos para exibição ao **profissional** (`AgendamentosProfissional.vue` e `Dashboard.vue`):
+```
+agendamentos.cliente_id
+  → usuarios.nome_completo
+agendamentos.itens
+  → itens_agendamentos.nome_servico / preco_praticado / tempo_execucao_minutos
+agendamentos.valor_total   → usado nos cards de receita do Dashboard
+```
+
+Relacionamentos para **verificação de disponibilidade** (`AgendamentoService::verificarDisponibilidade()`):
+```
+agendamentos.profissional_id
+  → horarios_funcionamento.dia_semana / hora_inicio / hora_fim
+  → bloqueios_agenda (pontuais: data_inicio/data_fim)
+  → bloqueios_agenda (recorrentes: hora_inicio/hora_fim/dias_semana)
+  → agendamentos existentes (conflito de slot: status IN pendente/confirmado/em_atendimento)
 ```

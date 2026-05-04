@@ -716,33 +716,36 @@ A arquitetura foi projetada para **MySQL 8.0 / MariaDB** com visão de longo pra
 | Registro (cliente + profissional) | `Registro.vue`, `RegistroController.php` | `usuarios`, `perfis`, `profissionais` | ✅ Funcional (Spatie Permission) |
 | Cadastro de estabelecimento pelo profissional | `Profissional/Estabelecimento.vue`, `ProfissionalController.php` | `estabelecimentos`, `profissionais` | ✅ Funcional |
 | CRUD de serviços do profissional | `Profissional/Servicos.vue`, `ServicoFormDialog.vue`, `ServicoController.php` | `servicos`, `servicos_profissionais` | ✅ Funcional (catálogo + criação) |
-| DashboardLayout (painel profissional) | `DashboardLayout.vue` | — | ✅ Menu lateral com "Meu Estabelecimento" e "Meus Serviços" |
+| DashboardLayout (painel profissional) | `DashboardLayout.vue` | — | ✅ Menu lateral com 5 itens (Estabelecimento, Serviços, Horários, Bloqueios, Agendamentos) |
 | Menu condicional "Painel Profissional" | `AppHeader.vue`, `AppSidebar.vue` | `auth.roles` | ✅ Visível apenas para role `profissional` |
 | Fluxo de agendamento (calendário + horários) | `ServicoItem.vue` (Drawer) | `agendamentos` | ✅ Funcional |
-| Listagem de agendamentos | `Agendamentos.vue`, `AgendamentoCard.vue` | `agendamentos` | ✅ Funcional |
-| Cancelamento de agendamento | `AgendamentoCard.vue` (ConfirmDialog) | `agendamentos` | ✅ Funcional |
+| Listagem de agendamentos (cliente) | `Agendamentos.vue`, `AgendamentoCard.vue` | `agendamentos` | ✅ Funcional |
+| Cancelamento de agendamento (cliente) | `AgendamentoCard.vue` (ConfirmDialog) | `agendamentos` | ✅ Funcional |
 | Categorias de serviço | `categorias.js`, `CategoriaItem.vue` | `servicos.categoria` | ✅ Constantes locais |
 | Header/Footer/Sidebar responsivos | `AppHeader.vue`, `AppFooter.vue`, `AppSidebar.vue` | — | ✅ Funcional |
 | Schema completo (14 tabelas) | Migrations + Models + Seeders | Todas | ✅ Migrations executadas |
 | Spatie Permission (roles + permissions) | `User.php` + seeders | `roles`, `permissions`, `model_has_roles` | ✅ 3 roles: admin, profissional, cliente |
+| **Configuração de Horários** — grade semanal | `Profissional/Horarios.vue`, `HorarioController.php` | `horarios_funcionamento` | ✅ CRUD completo com toggle por dia |
+| **Gestão de Bloqueios** — folgas e recorrentes | `Profissional/Bloqueios.vue`, `BloqueioController.php` | `bloqueios_agenda` | ✅ Pontuais + recorrentes (por hora/dia da semana) |
+| **Agendamentos do profissional** — gestão de status | `Profissional/AgendamentosProfissional.vue`, `AgendamentoProfissionalController.php` | `agendamentos` | ✅ Filtro por status + ações: confirmar/recusar/concluir/cancelar |
+| **Horários no detalhe público** — dinâmico via DB | `EstabelecimentoDetail.vue`, `EstabelecimentoController.php` | `horarios_funcionamento` | ✅ Substituiu hardcode; lê `horarios_funcionamento` via prop |
+| **Cálculo de disponibilidade** — slots válidos | `AgendamentoService.php` | `horarios_funcionamento`, `bloqueios_agenda`, `agendamentos` | ✅ Valida: horário func. + bloqueios pontuais + recorrentes + conflitos |
+| Migration recorrência bloqueios | `2026_04_20_000001_alter_bloqueios_agenda_add_recorrencia.php` | `bloqueios_agenda` | ✅ Campos `recorrente`, `hora_inicio`, `hora_fim`, `dias_semana` |
 
 #### ⚠️ Parcialmente implementado — Precisa adequar
 | Funcionalidade | O que falta | Tabelas envolvidas |
 |---------------|------------|-------------------|
-| **Exibição de profissionais no detalhe público** | O detalhe do estabelecimento lista os profissionais e seus serviços via pivot, mas o fluxo de agendamento ainda não seleciona o profissional explicitamente antes do horário. | `profissionais`, `servicos_profissionais` |
-| **Horários de funcionamento** | Os horários estão hardcoded em `EstabelecimentoDetail.vue`. Devem vir de `horarios_funcionamento` (por profissional). Também impacta o cálculo de slots. | `horarios_funcionamento` |
-| **Cálculo de disponibilidade** | Precisa consultar: horários do profissional + bloqueios + agendamentos existentes + tempo de execução do serviço. | `horarios_funcionamento`, `bloqueios_agenda`, `agendamentos`, `servicos_profissionais` |
-| **Status detalhado de agendamentos** | Frontend usa status simplificado. A arquitetura prevê 7 status. Adaptar `AgendamentoCard.vue`. | `agendamentos.status` |
-| **Geolocalização** | Colunas lat/lng existem nas tabelas. Falta implementar busca por proximidade no frontend/backend. | `estabelecimentos.latitude`, `estabelecimentos.longitude` |
+| **Fluxo de agendamento — seleção de profissional** | O cliente escolhe o serviço mas ainda não seleciona o profissional explicitamente antes de ver os slots. `ServicoItem.vue` já recebe `horarios_funcionamento` e `bloqueios`, mas a seleção guiada do profissional no detalhe público falta. | `profissionais`, `servicos_profissionais` |
+| **Status detalhado de agendamentos (cliente)** | `AgendamentoCard.vue` do cliente usa status simplificado. Falta exibir `recusado`, `concluido`, `em_atendimento`, `nao_compareceu` com ícones e cores corretos. | `agendamentos.status` |
+| **`itens_agendamentos` — snapshot de preço** | Agendamentos são criados com itens, mas o snapshot (nome + valor no momento do agendamento) deve ser garantido em todos os fluxos. | `itens_agendamentos` |
+| **Geolocalização** | Colunas `latitude`/`longitude` existem em `estabelecimentos`. Falta implementar busca por proximidade. | `estabelecimentos.latitude`, `estabelecimentos.longitude` |
 
 #### ❌ Não implementado — Criar do zero
 | Funcionalidade | Tabelas envolvidas | Prioridade |
 |---------------|-------------------|-----------|
-| **Configuração de Horários** — grade de funcionamento semanal pelo profissional | `horarios_funcionamento` | 🔴 Alta |
-| **Dashboard do Profissional** — agenda do dia, próximos atendimentos, estatísticas | `agendamentos`, `profissionais` | 🔴 Alta |
-| **Gestão de Bloqueios** — marcar férias, folgas, intervalos | `bloqueios_agenda` | 🟡 Média |
+| **Dashboard do Profissional** — agenda do dia, cards de stats, próximos atendimentos | `agendamentos`, `profissionais`, `relatorios_financeiros` | 🔴 Alta |
+| **Página de Perfil** — editar dados pessoais, endereço, foto | `perfis`, `usuarios` | 🟡 Média |
 | **Relatório Financeiro** — visualização por dia/semana/mês | `relatorios_financeiros`, `agendamentos`, `itens_agendamentos` | 🟡 Média |
-| **Página de Perfil** — editar dados pessoais, endereço, foto | `perfis` | 🟡 Média |
 | **Avaliações** — nota + comentário pós-serviço | `avaliacoes` | 🟢 Baixa (pós-MVP) |
 | **Notificações** — lembretes e avisos | `notificacoes` | 🟢 Baixa (pós-MVP) |
 
@@ -756,13 +759,12 @@ A arquitetura foi projetada para **MySQL 8.0 / MariaDB** com visão de longo pra
 - **Autenticação real** — `Auth::attempt()` com sessão Laravel + Spatie Permission (roles & permissions)
 - **Dados estáticos** mantidos inline:
   - Categorias de serviço → `Constants/categorias.js` (enum no banco, constantes no frontend)
-  - Horários de funcionamento → hardcoded em `EstabelecimentoDetail.vue` (até implementar tela de gestão)
 - **Vite** (node container) serve assets em desenvolvimento, `laravel-vite-plugin` integra com Blade
 
 #### Próximos Passos de Dados
-1. **Configuração de Horários** — tela para profissional cadastrar grade semanal (`horarios_funcionamento`)
-2. **Cálculo de disponibilidade real** — baseado em horários + bloqueios + agendamentos existentes
-3. **Aprimorar fluxo de agendamento** — selecionar profissional, snapshot de preço em `itens_agendamentos`
+1. **Dashboard do Profissional** — página inicial do painel com resumo do dia, próximos agendamentos e cards de receita
+2. **Aprimorar fluxo de agendamento** — seleção guiada do profissional antes dos slots de horário
+3. **Status completo no `AgendamentoCard.vue` (cliente)** — exibir todos os 7 status com transições corretas
 4. **Geolocalização** — busca por proximidade usando lat/lng do `estabelecimentos`
 
 ---
@@ -778,31 +780,33 @@ A arquitetura foi projetada para **MySQL 8.0 / MariaDB** com visão de longo pra
 - Registro de cliente e profissional (`Registro.vue` + `RegistroController`)
 - Cadastro de estabelecimento pelo profissional (`Profissional/Estabelecimento.vue`)
 - CRUD de serviços do profissional (`Profissional/Servicos.vue` + `ServicoController`)
-- DashboardLayout com menu lateral (Meu Estabelecimento + Meus Serviços)
+- DashboardLayout com menu lateral (5 itens: Estabelecimento, Serviços, Horários, Bloqueios, Agendamentos)
 - Login com redirect condicional por role
 - Menu "Painel Profissional" condicional no header e sidebar
 - 6 containers Docker (webserver, php-fpm, node, mysql, redis, mailhog)
+- **Configuração de Horários** — grade semanal com toggle por dia (`Horarios.vue` + `HorarioController`)
+- **Gestão de Bloqueios** — pontuais e recorrentes por dia/hora (`Bloqueios.vue` + `BloqueioController`)
+- **Gestão de Agendamentos do Profissional** — filtro por status + confirmar/recusar/concluir/cancelar
+- **Horários dinâmicos no detalhe público** — lidos de `horarios_funcionamento` via prop (removido hardcode)
+- **Cálculo de disponibilidade** — `AgendamentoService::verificarDisponibilidade()` com 3 camadas de validação
+- **Migration de recorrência** — `bloqueios_agenda` suporta bloqueios recorrentes
 
-#### Fase Atual: Completar Painel do Profissional
-1. Configurar grade de horários semanal (`horarios_funcionamento`)
-2. Criar dashboard com agenda do dia e próximos atendimentos
-3. Bloqueios de agenda (férias, folgas)
+#### Fase Atual: Dashboard e Polimento do Fluxo do Cliente
+1. Criar Dashboard do Profissional (página inicial do painel com stats e agenda do dia)
+2. Aprimorar seleção de profissional no fluxo de agendamento público
+3. Atualizar `AgendamentoCard.vue` do cliente para todos os 7 status
 
-#### Próxima Fase: Aprimorar Fluxo de Agendamento
-1. Selecionar profissional antes do horário no detalhe do estabelecimento
-2. Cálculo real de disponibilidade (horários - bloqueios - agendamentos - tempo execução)
-3. Usar `itens_agendamentos` para snapshot de preço
-4. Implementar 7 status com transições válidas
+#### Próxima Fase: Perfil e Financeiro
+1. Página de Perfil do usuário (dados pessoais, endereço, foto)
+2. Relatório Financeiro — visualização por dia/semana/mês
+3. Geolocalização (busca por proximidade)
 
-#### Fase: Relatórios e Engajamento
-1. `RelatorioFinanceiro` — page + jobs para `relatorios_financeiros`
-2. Geolocalização (busca por proximidade)
-3. Avaliações pós-serviço + notificações
-
-#### Fase: Polimento
-1. PWA (manifest, service worker)
-2. Testes E2E com Playwright
-3. CI/CD via GitHub Actions
+#### Fase: Engajamento (Pós-MVP)
+1. Avaliações pós-serviço
+2. Notificações (lembretes, avisos)
+3. PWA (manifest, service worker)
+4. Testes E2E com Playwright
+5. CI/CD via GitHub Actions
 
 ---
 

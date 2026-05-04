@@ -10,6 +10,9 @@ use App\Http\Controllers\Profissional\ServicoController;
 use App\Http\Controllers\Profissional\HorarioController;
 use App\Http\Controllers\Profissional\BloqueioController;
 use App\Http\Controllers\Profissional\AgendamentoProfissionalController;
+use App\Http\Controllers\Profissional\DashboardController;
+use App\Http\Controllers\Profissional\FinanceiroController;
+use App\Http\Controllers\PerfilController;
 use Illuminate\Support\Facades\Route;
 
 // Públicas
@@ -24,11 +27,16 @@ Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 Route::get('/registro', [RegistroController::class, 'create'])->name('registro')->middleware('guest');
 Route::post('/registro', [RegistroController::class, 'store'])->middleware('guest');
 
-// Protegidas — Cliente
+// Protegidas — Cliente + Profissional
 Route::middleware('auth')->group(function () {
     Route::get('/agendamentos', [AgendamentoController::class, 'index'])->name('agendamentos');
     Route::post('/agendamentos', [AgendamentoController::class, 'store'])->name('agendamentos.store');
     Route::delete('/agendamentos/{id}', [AgendamentoController::class, 'destroy'])->name('agendamentos.destroy');
+
+    // Perfil
+    Route::get('/perfil', [PerfilController::class, 'index'])->name('perfil');
+    Route::put('/perfil', [PerfilController::class, 'update'])->name('perfil.update');
+    Route::put('/perfil/senha', [PerfilController::class, 'alterarSenha'])->name('perfil.senha');
 });
 
 // Protegidas — Profissional
@@ -36,6 +44,11 @@ Route::middleware(['auth', 'role:profissional'])
     ->prefix('profissional')
     ->name('profissional.')
     ->group(function () {
+        // Dashboard (página inicial do painel)
+        Route::redirect('', '/profissional/dashboard')->name('redirect');
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+        // Estabelecimento
         Route::get('/estabelecimento', [ProfissionalController::class, 'estabelecimento'])->name('estabelecimento');
         Route::post('/estabelecimento', [ProfissionalController::class, 'salvarEstabelecimento'])->name('estabelecimento.salvar');
 
@@ -57,4 +70,7 @@ Route::middleware(['auth', 'role:profissional'])
         // Agendamentos do profissional
         Route::get('/agendamentos', [AgendamentoProfissionalController::class, 'index'])->name('agendamentos.profissional');
         Route::put('/agendamentos/{id}/status', [AgendamentoProfissionalController::class, 'alterarStatus'])->name('agendamentos.status');
+
+        // Financeiro
+        Route::get('/financeiro', [FinanceiroController::class, 'index'])->name('financeiro');
     });

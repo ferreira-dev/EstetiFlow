@@ -102,6 +102,7 @@
                         <!-- confirmado: iniciar | cancelar | não compareceu -->
                         <template v-else-if="ag.status === 'confirmado'">
                             <Button
+                                v-if="!isFuture(new Date(ag.data_hora_inicio))"
                                 label="Iniciar"
                                 icon="pi pi-play"
                                 size="small"
@@ -116,6 +117,7 @@
                                 @click="confirmarAcao(ag, 'cancelado_profissional', 'Cancelar este agendamento?')"
                             />
                             <Button
+                                v-if="!isFuture(new Date(ag.data_hora_inicio))"
                                 label="Não compareceu"
                                 icon="pi pi-user-minus"
                                 size="small"
@@ -170,7 +172,7 @@ import Button from 'primevue/button'
 import Tag from 'primevue/tag'
 import ConfirmDialog from 'primevue/confirmdialog'
 import DashboardLayout from '@/Layouts/DashboardLayout.vue'
-import { formatarData, formatarHora, formatarMoeda } from '@/Utils/formatters'
+import { formatarData, formatarHora, formatarMoeda, isFuture } from '@/Utils/formatters'
 
 defineOptions({ layout: DashboardLayout })
 
