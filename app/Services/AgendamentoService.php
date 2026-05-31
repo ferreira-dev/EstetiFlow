@@ -200,15 +200,38 @@ class AgendamentoService
     ];
 
     /**
-     * Lista agendamentos do profissional com filtro opcional por status.
+     * Lista agendamentos do profissional com filtros (status, cliente, datas).
      */
-    public function listarDoProfissional(int $profissionalId, ?string $status = null): Collection
+    public function listarDoProfissional(int $profissionalId, array $filtros = []): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
-        return Agendamento::where('profissional_id', $profissionalId)
-            ->when($status && $status !== 'todos', fn($q) => $q->where('status', $status))
+        $query = Agendamento::where('profissional_id', $profissionalId)
             ->with(['cliente.perfil', 'itens'])
-            ->orderByDesc('data_hora_inicio')
-            ->get();
+            ->orderByDesc('data_hora_inicio');
+
+        if (!empty($filtros['status']) && $filtros['status'] !== 'todos') {
+            $query->where('status', $filtros['status']);
+        }
+
+        if (!empty($filtros['cliente'])) {
+            $termo = $filtros['cliente'];
+            $query->whereHas('cliente', function ($q) use ($termo) {
+                $q->where('nome_completo', 'like', "%{$termo}%")
+                  ->orWhere('email', 'like', "%{$termo}%")
+                  ->orWhereHas('perfil', function ($q2) use ($termo) {
+                      $q2->where('telefone', 'like', "%{$termo}%");
+                  });
+            });
+        }
+
+        if (!empty($filtros['data_inicio'])) {
+            $query->where('data_hora_inicio', '>=', Carbon::parse($filtros['data_inicio'])->startOfDay());
+        }
+
+        if (!empty($filtros['data_fim'])) {
+            $query->where('data_hora_inicio', '<=', Carbon::parse($filtros['data_fim'])->endOfDay());
+        }
+
+        return $query->paginate(15);
     }
 
     /**

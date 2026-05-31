@@ -19,19 +19,22 @@ class AgendamentoProfissionalController extends Controller
     ) {}
 
     /**
-     * Lista os agendamentos do profissional logado com filtro opcional por status.
+     * Lista os agendamentos do profissional logado com filtros opcionais.
      */
     public function index(Request $request): Response
     {
         $profissional = Auth::user()->profissional;
 
-        $status = $request->input('status', 'todos');
+        $filtros = $request->only(['status', 'cliente', 'data_inicio', 'data_fim']);
+        if (empty($filtros['status'])) {
+            $filtros['status'] = 'todos';
+        }
 
-        $agendamentos = $this->service->listarDoProfissional($profissional->id, $status);
+        $agendamentos = $this->service->listarDoProfissional($profissional->id, $filtros);
 
         return Inertia::render('Profissional/AgendamentosProfissional', [
             'agendamentos'          => $agendamentos,
-            'filtroAtual'           => $status,
+            'filtros'               => $filtros,
             'servicos'              => $profissional->servicosProfissionais()->with('servico')->get(),
             'horariosFuncionamento' => $profissional->horariosFuncionamento()->get(),
             'bloqueios'             => $profissional->bloqueiosAgenda()->get(),

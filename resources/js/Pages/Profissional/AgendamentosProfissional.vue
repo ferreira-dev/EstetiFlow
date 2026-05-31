@@ -2,37 +2,66 @@
     <div class="mx-auto max-w-4xl space-y-6">
 
         <!-- Header -->
-        <div class="flex items-center gap-3">
-            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-500/20">
-                <i class="pi pi-calendar text-lg text-primary-400"></i>
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-500/20">
+                    <i class="pi pi-calendar text-lg text-primary-400"></i>
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold text-white">Agendamentos</h2>
+                    <p class="text-sm text-zinc-400">Gerencie seus atendimentos e atualize os status</p>
+                </div>
             </div>
-            <div>
-                <h2 class="text-lg font-bold text-white">Agendamentos</h2>
-                <p class="text-sm text-zinc-400">Gerencie seus atendimentos e atualize os status</p>
-            </div>
+            
+            <Button
+                label="Novo Agendamento"
+                icon="pi pi-plus"
+                @click="dialogNovoAgendamentoVisible = true"
+            />
         </div>
 
-        <!-- Filtros de status -->
-        <div class="flex flex-wrap gap-2">
-            <button
-                v-for="filtro in filtros"
-                :key="filtro.value"
-                :class="[
-                    'rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-150',
-                    filtroAtual === filtro.value
-                        ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25'
-                        : 'bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-zinc-200',
-                ]"
-                @click="aplicarFiltro(filtro.value)"
-            >
-                {{ filtro.label }}
-            </button>
+        <!-- Filtros -->
+        <div class="flex flex-col gap-4">
+            <div class="flex flex-wrap items-center gap-2">
+                <div class="w-full sm:w-auto">
+                    <InputText v-model="filtroBusca.cliente" placeholder="Nome, E-mail ou Telefone..." class="w-full sm:w-64" />
+                </div>
+                <div class="w-full sm:w-auto">
+                    <DatePicker 
+                        v-model="filtroBusca.datas" 
+                        selectionMode="range" 
+                        showIcon 
+                        placeholder="Período" 
+                        dateFormat="dd/mm/yy"
+                        class="w-full sm:w-64"
+                    />
+                </div>
+                <Button label="Filtrar" icon="pi pi-filter" @click="aplicarBusca" class="w-full sm:w-auto" />
+                <Button label="Limpar" icon="pi pi-filter-slash" text @click="limparBusca" class="w-full sm:w-auto" v-if="hasActiveFilters" />
+            </div>
+
+            <!-- Filtros de status -->
+            <div class="flex flex-wrap gap-2">
+                <button
+                    v-for="filtro in filtrosItems"
+                    :key="filtro.value"
+                    :class="[
+                        'rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-150',
+                        props.filtros?.status === filtro.value || (!props.filtros?.status && filtro.value === 'todos')
+                            ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25'
+                            : 'bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-zinc-200',
+                    ]"
+                    @click="aplicarFiltroStatus(filtro.value)"
+                >
+                    {{ filtro.label }}
+                </button>
+            </div>
         </div>
 
         <!-- Lista de agendamentos -->
-        <div v-if="agendamentos.length > 0" class="space-y-3">
+        <div v-if="agendamentos.data && agendamentos.data.length > 0" class="space-y-3">
             <div
-                v-for="ag in agendamentos"
+                v-for="ag in agendamentos.data"
                 :key="ag.id"
                 class="glass-card p-5 transition-all duration-200 hover:border-white/10"
             >
@@ -160,10 +189,13 @@
                 </div>
             </div>
             
-            <Button
-                label="Novo Agendamento"
-                icon="pi pi-plus"
-                @click="dialogNovoAgendamentoVisible = true"
+            <Paginator 
+                v-if="agendamentos.total > 0"
+                :rows="agendamentos.per_page"
+                :totalRecords="agendamentos.total"
+                :first="(agendamentos.current_page - 1) * agendamentos.per_page"
+                @page="onPageChange"
+                class="mt-4 border-none bg-transparent justify-center"
             />
         </div>
 
@@ -174,7 +206,7 @@
             </div>
             <h3 class="mb-1 text-base font-semibold text-white">Nenhum agendamento encontrado</h3>
             <p class="text-sm text-zinc-400">
-                {{ filtroAtual === 'todos' ? 'Você ainda não possui agendamentos.' : 'Nenhum agendamento com este status.' }}
+                {{ props.filtros?.status === 'todos' ? 'Você ainda não possui agendamentos correspondentes aos filtros.' : 'Nenhum agendamento com este status ou filtro.' }}
             </p>
         </div>
 
@@ -234,13 +266,16 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { router } from '@inertiajs/vue3'
 import { useConfirm } from 'primevue/useconfirm'
 import Button from 'primevue/button'
 import Tag from 'primevue/tag'
 import ConfirmDialog from 'primevue/confirmdialog'
 import Popover from 'primevue/popover'
+import InputText from 'primevue/inputtext'
+import DatePicker from 'primevue/datepicker'
+import Paginator from 'primevue/paginator'
 import DashboardLayout from '@/Layouts/DashboardLayout.vue'
 import NovoAgendamentoDialog from '@/Components/Profissional/NovoAgendamentoDialog.vue'
 import { formatarData, formatarHora, formatarMoeda, isFuture, formatarTelefone, calcularIdade, formatarDataCurta } from '@/Utils/formatters'
@@ -248,8 +283,8 @@ import { formatarData, formatarHora, formatarMoeda, isFuture, formatarTelefone, 
 defineOptions({ layout: DashboardLayout })
 
 const props = defineProps({
-    agendamentos: { type: Array, default: () => [] },
-    filtroAtual:  { type: String, required: true },
+    agendamentos: { type: Object, default: () => ({ data: [], total: 0, current_page: 1, per_page: 15 }) },
+    filtros: { type: Object, default: () => ({ status: 'todos' }) },
     servicos: { type: Array, default: () => [] },
     horariosFuncionamento: { type: Array, default: () => [] },
     bloqueios: { type: Array, default: () => [] },
@@ -286,18 +321,82 @@ const statusConfig = {
     nao_compareceu:        { label: 'Não Compareceu',            severity: 'warn'      },
 }
 
-// ── Filtros disponíveis ──────────────────────────────────────────────────────
-const filtros = [
-    { value: 'todos',              label: 'Todos'           },
-    { value: 'pendente',           label: 'Pendentes'       },
-    { value: 'confirmado',         label: 'Confirmados'     },
-    { value: 'em_atendimento',     label: 'Em Andamento'    },
-    { value: 'concluido',          label: 'Concluídos'      },
-    { value: 'cancelado_profissional', label: 'Cancelados'  },
+// ── Busca e Filtros Avançados ────────────────────────────────────────────────
+const filtrosItems = [
+    { value: 'todos',                  label: 'Todos'           },
+    { value: 'pendente',               label: 'Pendentes'       },
+    { value: 'confirmado',             label: 'Confirmados'     },
+    { value: 'em_atendimento',         label: 'Em Andamento'    },
+    { value: 'concluido',              label: 'Concluídos'      },
+    { value: 'cancelado_profissional', label: 'Cancelados'      },
 ]
 
-function aplicarFiltro(status) {
-    router.get('/profissional/agendamentos', { status }, { preserveState: true, replace: true })
+// Inicializar estado dos filtros a partir das props
+const filtroBusca = ref({
+    cliente: props.filtros?.cliente || '',
+    datas: null
+})
+
+// Traduzir as strings de datas em objetos Date para o DatePicker
+if (props.filtros?.data_inicio && props.filtros?.data_fim) {
+    filtroBusca.value.datas = [
+        new Date(props.filtros.data_inicio + 'T12:00:00'),
+        new Date(props.filtros.data_fim + 'T12:00:00')
+    ]
+} else if (props.filtros?.data_inicio) {
+    filtroBusca.value.datas = [new Date(props.filtros.data_inicio + 'T12:00:00'), null]
+}
+
+const hasActiveFilters = computed(() => {
+    return filtroBusca.value.cliente !== '' || (filtroBusca.value.datas !== null && filtroBusca.value.datas.length > 0)
+})
+
+function dispararFiltros(novosFiltros) {
+    const payload = { ...props.filtros, ...novosFiltros }
+    
+    // Formatar datas para o envio
+    if (filtroBusca.value.datas && filtroBusca.value.datas[0]) {
+        const d1 = filtroBusca.value.datas[0]
+        payload.data_inicio = `${d1.getFullYear()}-${String(d1.getMonth()+1).padStart(2, '0')}-${String(d1.getDate()).padStart(2, '0')}`
+        
+        if (filtroBusca.value.datas[1]) {
+            const d2 = filtroBusca.value.datas[1]
+            payload.data_fim = `${d2.getFullYear()}-${String(d2.getMonth()+1).padStart(2, '0')}-${String(d2.getDate()).padStart(2, '0')}`
+        } else {
+            delete payload.data_fim
+        }
+    } else {
+        delete payload.data_inicio
+        delete payload.data_fim
+    }
+    
+    payload.cliente = filtroBusca.value.cliente || undefined
+    
+    // Reseta paginação ao mudar filtros se a origem nao for o onPageChange
+    if (!novosFiltros.page) {
+        payload.page = 1 
+    }
+
+    router.get('/profissional/agendamentos', payload, { preserveState: true, replace: true })
+}
+
+function aplicarBusca() {
+    dispararFiltros({})
+}
+
+function limparBusca() {
+    filtroBusca.value.cliente = ''
+    filtroBusca.value.datas = null
+    dispararFiltros({})
+}
+
+function aplicarFiltroStatus(status) {
+    dispararFiltros({ status })
+}
+
+function onPageChange(event) {
+    const page = event.page + 1
+    dispararFiltros({ page })
 }
 
 // ── Transições de status ─────────────────────────────────────────────────────
