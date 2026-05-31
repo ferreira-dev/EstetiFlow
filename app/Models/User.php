@@ -20,6 +20,11 @@ class User extends Authenticatable
         'ativo',
     ];
 
+    public function scopePreCadastro($query)
+    {
+        return $query->whereNull('password');
+    }
+
     protected $hidden = [
         'password',
         'remember_token',

@@ -5,6 +5,7 @@ use App\Http\Controllers\EstabelecimentoController;
 use App\Http\Controllers\AgendamentoController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegistroController;
+use App\Http\Controllers\Auth\CompletarCadastroController;
 use App\Http\Controllers\Profissional\ProfissionalController;
 use App\Http\Controllers\Profissional\ServicoController;
 use App\Http\Controllers\Profissional\HorarioController;
@@ -26,6 +27,8 @@ Route::post('/login', [LoginController::class, 'store'])->middleware('guest');
 Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 Route::get('/registro', [RegistroController::class, 'create'])->name('registro')->middleware('guest');
 Route::post('/registro', [RegistroController::class, 'store'])->middleware('guest');
+Route::get('/completar-cadastro/{token}', [CompletarCadastroController::class, 'create'])->name('completar-cadastro')->middleware('guest');
+Route::post('/completar-cadastro', [CompletarCadastroController::class, 'store'])->middleware('guest');
 
 // Protegidas — Cliente + Profissional
 Route::middleware('auth')->group(function () {
@@ -70,6 +73,9 @@ Route::middleware(['auth', 'role:profissional'])
         // Agendamentos do profissional
         Route::get('/agendamentos', [AgendamentoProfissionalController::class, 'index'])->name('agendamentos.profissional');
         Route::put('/agendamentos/{id}/status', [AgendamentoProfissionalController::class, 'alterarStatus'])->name('agendamentos.status');
+        Route::get('/agendamentos/buscar-cliente', [AgendamentoProfissionalController::class, 'buscarCliente'])->name('agendamentos.buscarCliente');
+        Route::post('/agendamentos/pre-cadastro', [AgendamentoProfissionalController::class, 'preCadastrarCliente'])->name('agendamentos.preCadastro');
+        Route::post('/agendamentos', [AgendamentoProfissionalController::class, 'criarAgendamento'])->name('agendamentos.store');
 
         // Financeiro
         Route::get('/financeiro', [FinanceiroController::class, 'index'])->name('financeiro');

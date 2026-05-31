@@ -39,6 +39,16 @@ class RegistroController extends Controller
 
         $validated = $request->validate($rules);
 
+        // Detectar pré-cadastro pelo telefone
+        if (!empty($validated['telefone'])) {
+            $perfilPreCadastrado = Perfil::where('telefone', $validated['telefone'])->first();
+            if ($perfilPreCadastrado && $perfilPreCadastrado->usuario && $perfilPreCadastrado->usuario->password === null) {
+                return redirect()->route('completar-cadastro', ['token' => encrypt($perfilPreCadastrado->usuario->id)])
+                    ->with('info', 'Encontramos um pré-cadastro com este telefone. Complete seu cadastro informando a mesma senha que escolheu.');
+                // Here we might need to actually just redirect to completar-cadastro to set the password and email correctly.
+            }
+        }
+
         // ── Criação do Usuário ────────────────────────────────────────────
         $user = User::create([
             'nome_completo' => $validated['nome_completo'],

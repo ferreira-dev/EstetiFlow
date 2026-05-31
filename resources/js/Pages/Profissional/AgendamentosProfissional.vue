@@ -159,6 +159,12 @@
                     </div>
                 </div>
             </div>
+            
+            <Button
+                label="Novo Agendamento"
+                icon="pi pi-plus"
+                @click="dialogNovoAgendamentoVisible = true"
+            />
         </div>
 
         <!-- Estado vazio -->
@@ -215,6 +221,15 @@
                 </div>
             </div>
         </Popover>
+
+        <!-- Dialog de Novo Agendamento (Profissional) -->
+        <NovoAgendamentoDialog
+            v-model:visible="dialogNovoAgendamentoVisible"
+            :servicos="servicos"
+            :horariosFuncionamento="horariosFuncionamento"
+            :bloqueios="bloqueios"
+        />
+
     </div>
 </template>
 
@@ -227,13 +242,17 @@ import Tag from 'primevue/tag'
 import ConfirmDialog from 'primevue/confirmdialog'
 import Popover from 'primevue/popover'
 import DashboardLayout from '@/Layouts/DashboardLayout.vue'
+import NovoAgendamentoDialog from '@/Components/Profissional/NovoAgendamentoDialog.vue'
 import { formatarData, formatarHora, formatarMoeda, isFuture, formatarTelefone, calcularIdade, formatarDataCurta } from '@/Utils/formatters'
 
 defineOptions({ layout: DashboardLayout })
 
 const props = defineProps({
     agendamentos: { type: Array, default: () => [] },
-    filtroAtual:  { type: String, default: 'todos' },
+    filtroAtual:  { type: String, required: true },
+    servicos: { type: Array, default: () => [] },
+    horariosFuncionamento: { type: Array, default: () => [] },
+    bloqueios: { type: Array, default: () => [] },
 })
 
 const confirm = useConfirm()
@@ -241,6 +260,10 @@ const confirm = useConfirm()
 // ── Estado do Popover ────────────────────────────────────────────────────────
 const op = ref()
 const selectedAgendamento = ref(null)
+const modalSucessoVisivel = ref(false)
+const agendamentoParaStatus = ref(null)
+const erroGlobal = ref('')
+const dialogNovoAgendamentoVisible = ref(false)
 
 const toggleContato = (event, ag) => {
     selectedAgendamento.value = ag

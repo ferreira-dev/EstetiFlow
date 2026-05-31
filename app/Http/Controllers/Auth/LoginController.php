@@ -23,6 +23,13 @@ class LoginController extends Controller
             'password' => ['required'],
         ]);
 
+        $user = \App\Models\User::where('email', $credentials['email'])->first();
+
+        if ($user && $user->password === null) {
+            return redirect()->route('completar-cadastro', ['token' => encrypt($user->id)])
+                ->with('info', 'Encontramos um pré-cadastro no seu nome. Complete seu cadastro para continuar.');
+        }
+
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
 

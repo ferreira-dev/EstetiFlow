@@ -13,17 +13,7 @@ class Perfil extends Model
         'usuario_id',
         'foto_url',
         'data_nascimento',
-        'genero',
         'telefone',
-        'cep',
-        'logradouro',
-        'numero',
-        'complemento',
-        'bairro',
-        'cidade',
-        'estado',
-        'latitude',
-        'longitude',
     ];
 
     protected $casts = [

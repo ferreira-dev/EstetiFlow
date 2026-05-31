@@ -52,62 +52,10 @@
                         />
                     </div>
 
-                    <!-- Gênero -->
-                    <div class="flex flex-col gap-1 sm:col-span-2">
-                        <label class="text-xs font-medium text-zinc-400">Gênero</label>
-                        <Select
-                            v-model="form.genero"
-                            :options="opcoesGenero"
-                            optionLabel="label"
-                            optionValue="value"
-                            placeholder="Prefiro não informar"
-                            class="w-full sm:w-64"
-                        />
-                    </div>
                 </div>
             </div>
 
-            <!-- Endereço -->
-            <div class="glass-card space-y-5 p-6">
-                <h3 class="font-semibold text-white">Endereço</h3>
 
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-6">
-                    <div class="flex flex-col gap-1 sm:col-span-2">
-                        <label class="text-xs font-medium text-zinc-400">CEP</label>
-                        <InputText v-model="form.cep" placeholder="00000-000" class="w-full" maxlength="9" />
-                    </div>
-
-                    <div class="flex flex-col gap-1 sm:col-span-4">
-                        <label class="text-xs font-medium text-zinc-400">Logradouro</label>
-                        <InputText v-model="form.logradouro" placeholder="Rua, Avenida..." class="w-full" />
-                    </div>
-
-                    <div class="flex flex-col gap-1 sm:col-span-1">
-                        <label class="text-xs font-medium text-zinc-400">Número</label>
-                        <InputText v-model="form.numero" placeholder="123" class="w-full" />
-                    </div>
-
-                    <div class="flex flex-col gap-1 sm:col-span-2">
-                        <label class="text-xs font-medium text-zinc-400">Complemento</label>
-                        <InputText v-model="form.complemento" placeholder="Apto, Bloco..." class="w-full" />
-                    </div>
-
-                    <div class="flex flex-col gap-1 sm:col-span-3">
-                        <label class="text-xs font-medium text-zinc-400">Bairro</label>
-                        <InputText v-model="form.bairro" placeholder="Bairro" class="w-full" />
-                    </div>
-
-                    <div class="flex flex-col gap-1 sm:col-span-4">
-                        <label class="text-xs font-medium text-zinc-400">Cidade</label>
-                        <InputText v-model="form.cidade" placeholder="Cidade" class="w-full" />
-                    </div>
-
-                    <div class="flex flex-col gap-1 sm:col-span-2">
-                        <label class="text-xs font-medium text-zinc-400">Estado</label>
-                        <InputText v-model="form.estado" placeholder="SP" class="w-full" maxlength="2" style="text-transform:uppercase" />
-                    </div>
-                </div>
-            </div>
 
             <div class="flex justify-end">
                 <Button
@@ -186,7 +134,6 @@ import { useToast } from 'primevue/usetoast'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import DatePicker from 'primevue/datepicker'
-import Select from 'primevue/select'
 import Password from 'primevue/password'
 import DefaultLayout from '@/Layouts/DefaultLayout.vue'
 
@@ -206,14 +153,6 @@ const form = ref({
     nome_completo:   props.usuario.nome_completo ?? '',
     telefone:        props.perfil?.telefone ?? '',
     data_nascimento: props.perfil?.data_nascimento ?? null,
-    genero:          props.perfil?.genero ?? null,
-    cep:             props.perfil?.cep ?? '',
-    logradouro:      props.perfil?.logradouro ?? '',
-    numero:          props.perfil?.numero ?? '',
-    complemento:     props.perfil?.complemento ?? '',
-    bairro:          props.perfil?.bairro ?? '',
-    cidade:          props.perfil?.cidade ?? '',
-    estado:          props.perfil?.estado ?? '',
 })
 
 // DatePicker trabalha com objetos Date
@@ -276,10 +215,5 @@ const iniciais = computed(() => {
         .toUpperCase()
 })
 
-const opcoesGenero = [
-    { label: 'Masculino',            value: 'masculino' },
-    { label: 'Feminino',             value: 'feminino' },
-    { label: 'Outro',                value: 'outro' },
-    { label: 'Prefiro não informar', value: 'prefiro_nao_informar' },
-]
+
 </script>

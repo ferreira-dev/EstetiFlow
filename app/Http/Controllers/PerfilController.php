@@ -43,14 +43,6 @@ class PerfilController extends Controller
             'nome_completo'   => ['required', 'string', 'max:150'],
             'telefone'        => ['nullable', 'string', 'max:20'],
             'data_nascimento' => ['nullable', 'date'],
-            'genero'          => ['nullable', 'in:masculino,feminino,outro,prefiro_nao_informar'],
-            'cep'             => ['nullable', 'string', 'max:9'],
-            'logradouro'      => ['nullable', 'string', 'max:200'],
-            'numero'          => ['nullable', 'string', 'max:10'],
-            'complemento'     => ['nullable', 'string', 'max:100'],
-            'bairro'          => ['nullable', 'string', 'max:100'],
-            'cidade'          => ['nullable', 'string', 'max:100'],
-            'estado'          => ['nullable', 'string', 'size:2'],
         ]);
 
         // Atualiza nome no usuário
@@ -60,9 +52,7 @@ class PerfilController extends Controller
         $user->perfil()->updateOrCreate(
             ['usuario_id' => $user->id],
             $request->only([
-                'telefone', 'data_nascimento', 'genero',
-                'cep', 'logradouro', 'numero', 'complemento',
-                'bairro', 'cidade', 'estado',
+                'telefone', 'data_nascimento'
             ])
         );
 
