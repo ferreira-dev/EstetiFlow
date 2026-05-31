@@ -7,11 +7,11 @@ Plataforma SaaS para agendamento de serviços estéticos (barbearias, salões, c
 ## 🛠️ Stack Tecnológica
 
 | Camada | Tecnologia |
-|--------|-----------|
+|--------|-----------| 
 | **Frontend** | Vue 3 (Composition API) + Inertia.js + PrimeVue 4 (Aura) + Tailwind CSS |
 | **Backend** | Laravel 11 (monolito com Inertia) |
-| **Banco** | MySQL 8.0 |
-| **Auth** | Sessão Laravel + Spatie Permission |
+| **Banco** | MySQL 8.0 (14 tabelas, 5 módulos) |
+| **Auth** | Sessão Laravel + Spatie Permission (3 roles) |
 | **Infra** | Docker Compose (6 containers) |
 
 ---
@@ -73,12 +73,12 @@ php artisan route:list
 ## 📂 Estrutura de Pastas
 
 ```
-app/Http/Controllers/       # Controllers Laravel
+app/Http/Controllers/       # Controllers Laravel (Auth/, Profissional/)
 app/Models/                 # Eloquent Models (14 tabelas)
-app/Services/               # Business logic services
+app/Services/               # Business logic (Agendamento, Estabelecimento)
 routes/web.php              # Rotas Inertia
 resources/js/
-├── Components/             # Componentes Vue reutilizáveis
+├── Components/             # Componentes Vue (Features/, Layout/, Profissional/)
 ├── Constants/              # Constantes (categorias, etc.)
 ├── Layouts/                # DefaultLayout, AuthLayout, DashboardLayout
 ├── Pages/                  # Páginas Inertia (Home, Login, Profissional/, etc.)
@@ -87,34 +87,29 @@ resources/js/
 
 ---
 
-## 📖 Documentação Técnica Detalhada
+## 📖 Documentação Técnica
 
-A documentação completa do projeto vive nas **skills** do agente:
+A documentação completa e centralizada do projeto está em:
+
+> **`.agents/docs/PROJETO.md`** — Fonte de verdade para todo o contexto técnico.
+
+### Índice de Seções
+
+| # | Seção | O que contém |
+|---|-------|-------------|
+| 1 | [Visão Geral do Produto](.agents/docs/PROJETO.md#1-visão-geral-do-produto) | Modelo de negócio, funcionalidades do MVP, features futuras |
+| 2 | [Stack Tecnológica](.agents/docs/PROJETO.md#2-stack-tecnológica) | Tabela completa de tecnologias por camada |
+| 3 | [Arquitetura e Estrutura](.agents/docs/PROJETO.md#3-arquitetura-e-estrutura-de-pastas) | Fluxo de dados, árvore de pastas, menu do painel |
+| 4 | [Padrões de Código](.agents/docs/PROJETO.md#4-padrões-de-código) | Nomenclatura, Vue 3 + Inertia, Service Pattern, Auth |
+| 5 | [Fluxo de Agendamento](.agents/docs/PROJETO.md#5-fluxo-de-agendamento) | Diagrama de status, transições, regras de exibição, tabelas |
+| 6 | [Estado Atual](.agents/docs/PROJETO.md#6-estado-atual--implementado-vs-pendente) | Implementado ✅ vs Parcial ⚠️ vs Pendente ❌ |
+| 7 | [Roadmap](.agents/docs/PROJETO.md#7-roadmap-de-implementação) | Fases de implementação com prioridades |
+| 8 | [Decisões Técnicas](.agents/docs/PROJETO.md#8-decisões-técnicas-registradas) | Trade-offs e escolhas arquiteturais |
+| 9 | [Referências](.agents/docs/PROJETO.md#9-referências) | Links para schema do banco, guias, rules |
+
+### Documentação Complementar
 
 | Documento | Caminho | Conteúdo |
 |-----------|---------|----------|
-| **Contexto do Projeto** | `.agents/skills/project-context/SKILL.md` | Stack, arquitetura, padrões de código, roadmap, estado atual |
-| **Schema de Banco** | `.agents/skills/saas-database-schema/SKILL.md` | 14 tabelas, tipos de dados, relacionamentos, regras de negócio |
-| **Arquitetura de Banco** | `.agents/skills/database-architecture/SKILL.md` | Metodologia de modelagem MySQL/MariaDB |
-
-> **⚠️ Fonte de verdade:** Sempre consulte os arquivos acima para contexto técnico. Este README é um resumo de setup.
-
----
-
-## 🚀 Estado Atual
-
-### ✅ Implementado
-- Registro e login com roles (cliente, profissional, admin)
-- Painel do profissional (DashboardLayout + menu lateral)
-- Cadastro de estabelecimento pelo profissional
-- CRUD de serviços (catálogo global + criação personalizada)
-- Listagem e detalhe de estabelecimentos
-- Agendamento de serviços
-- Cancelamento de agendamentos
-
-### 🔜 Próxima fase
-- Configuração de horários de funcionamento
-- Dashboard com agenda do dia
-- Bloqueios de agenda
-
-> Veja o roadmap completo em `.agents/skills/project-context/SKILL.md` → seção "Roadmap de Implementação".
+| **Schema de Banco** | `.agents/skills/saas-database-schema/SKILL.md` | 14 tabelas com tipos, relacionamentos e regras |
+| **Arquitetura de Banco** | `.agents/skills/database-architect/SKILL.md` | Metodologia de modelagem MySQL/MariaDB |
