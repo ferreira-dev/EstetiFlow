@@ -45,6 +45,17 @@
                             <span class="text-base font-semibold text-white">
                                 {{ ag.cliente?.nome_completo ?? '—' }}
                             </span>
+                            <Button 
+                                v-if="ag.cliente"
+                                icon="pi pi-address-book" 
+                                text 
+                                rounded 
+                                size="small" 
+                                class="h-6 w-6 p-0 text-zinc-400 hover:text-white" 
+                                @click="toggleContato($event, ag)"
+                                aria-haspopup="true"
+                                aria-controls="overlay_panel"
+                            />
                             <Tag
                                 :value="statusConfig[ag.status]?.label ?? ag.status"
                                 :severity="statusConfig[ag.status]?.severity"
@@ -162,17 +173,61 @@
         </div>
 
         <ConfirmDialog />
+
+        <!-- Popover de Contato do Cliente -->
+        <Popover ref="op">
+            <div class="flex flex-col gap-4 p-2 w-[280px]" v-if="selectedAgendamento?.cliente">
+                <div class="flex items-center gap-2">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary-500/20">
+                        <i class="pi pi-user text-xl text-primary-400"></i>
+                    </div>
+                    <div>
+                        <span class="block text-sm font-bold text-white">{{ selectedAgendamento.cliente.nome_completo }}</span>
+                        <span class="block text-xs text-zinc-400">Cliente desde {{ formatarAno(selectedAgendamento.cliente.created_at) }}</span>
+                    </div>
+                </div>
+                
+                <div class="border-t border-white/10 my-1"></div>
+                
+                <div class="space-y-3">
+                    <div class="flex items-center gap-3">
+                        <i class="pi pi-phone text-zinc-400"></i>
+                        <span class="text-sm text-zinc-200">
+                            {{ selectedAgendamento.cliente.perfil?.telefone ? formatarTelefone(selectedAgendamento.cliente.perfil.telefone) : 'Não informado' }}
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <i class="pi pi-envelope text-zinc-400"></i>
+                        <span class="text-sm text-zinc-200 truncate" :title="selectedAgendamento.cliente.email">
+                            {{ selectedAgendamento.cliente.email }}
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <i class="pi pi-calendar text-zinc-400"></i>
+                        <span class="text-sm text-zinc-200">
+                            <template v-if="selectedAgendamento.cliente.perfil?.data_nascimento">
+                                {{ formatarDataCurta(selectedAgendamento.cliente.perfil.data_nascimento) }} 
+                                <span class="text-zinc-500">({{ calcularIdade(selectedAgendamento.cliente.perfil.data_nascimento) }} anos)</span>
+                            </template>
+                            <template v-else>Não informado</template>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </Popover>
     </div>
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { router } from '@inertiajs/vue3'
 import { useConfirm } from 'primevue/useconfirm'
 import Button from 'primevue/button'
 import Tag from 'primevue/tag'
 import ConfirmDialog from 'primevue/confirmdialog'
+import Popover from 'primevue/popover'
 import DashboardLayout from '@/Layouts/DashboardLayout.vue'
-import { formatarData, formatarHora, formatarMoeda, isFuture } from '@/Utils/formatters'
+import { formatarData, formatarHora, formatarMoeda, isFuture, formatarTelefone, calcularIdade, formatarDataCurta } from '@/Utils/formatters'
 
 defineOptions({ layout: DashboardLayout })
 
@@ -182,6 +237,20 @@ const props = defineProps({
 })
 
 const confirm = useConfirm()
+
+// ── Estado do Popover ────────────────────────────────────────────────────────
+const op = ref()
+const selectedAgendamento = ref(null)
+
+const toggleContato = (event, ag) => {
+    selectedAgendamento.value = ag
+    op.value.toggle(event)
+}
+
+function formatarAno(data) {
+    if (!data) return ''
+    return new Date(data).getFullYear()
+}
 
 // ── Configuração visual por status ───────────────────────────────────────────
 const statusConfig = {

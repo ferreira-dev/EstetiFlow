@@ -206,7 +206,7 @@ class AgendamentoService
     {
         return Agendamento::where('profissional_id', $profissionalId)
             ->when($status && $status !== 'todos', fn($q) => $q->where('status', $status))
-            ->with(['cliente', 'itens'])
+            ->with(['cliente.perfil', 'itens'])
             ->orderByDesc('data_hora_inicio')
             ->get();
     }

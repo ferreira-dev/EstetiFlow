@@ -1,4 +1,4 @@
-import { format, formatDistanceToNow, isToday, isTomorrow, isFuture, isPast } from 'date-fns'
+import { format, formatDistanceToNow, isToday, isTomorrow, isFuture, isPast, differenceInYears } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
 /**
@@ -93,6 +93,16 @@ export function saudacao() {
     if (hora < 12) return 'Bom dia'
     if (hora < 18) return 'Boa tarde'
     return 'Boa noite'
+}
+
+/**
+ * Calcula a idade com base na data de nascimento
+ * @param {string|Date} dataNascimento
+ * @returns {number} Idade em anos completos
+ */
+export function calcularIdade(dataNascimento) {
+    if (!dataNascimento) return 0
+    return differenceInYears(new Date(), new Date(dataNascimento))
 }
 
 // Reexporta funções de date-fns usadas nos componentes
