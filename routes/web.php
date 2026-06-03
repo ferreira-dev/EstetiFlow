@@ -19,7 +19,12 @@ use Illuminate\Support\Facades\Route;
 // Públicas
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/estabelecimentos', [EstabelecimentoController::class, 'index'])->name('estabelecimentos');
-Route::get('/estabelecimentos/{id}', [EstabelecimentoController::class, 'show'])->name('estabelecimento.show');
+Route::get('/estabelecimentos/{id}', [EstabelecimentoController::class, 'show'])
+    ->whereNumber('id')
+    ->name('estabelecimento.show');
+Route::get('/agendar/{urlPersonalizada}', [EstabelecimentoController::class, 'showPorUrl'])
+    ->where('urlPersonalizada', '[a-z0-9]+(?:-[a-z0-9]+)*')
+    ->name('estabelecimento.agendar');
 
 // Auth
 Route::get('/login', [LoginController::class, 'create'])->name('login')->middleware('guest');

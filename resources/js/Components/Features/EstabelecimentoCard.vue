@@ -27,7 +27,7 @@
             <p class="mt-1 truncate text-xs text-zinc-400">
                 {{ [estabelecimento.bairro, estabelecimento.cidade, estabelecimento.estado].filter(Boolean).join(' · ') }}
             </p>
-            <Link :href="`/estabelecimentos/${estabelecimento.id}`">
+            <Link :href="estabelecimento.url_personalizada ? `/agendar/${estabelecimento.url_personalizada}` : `/estabelecimentos/${estabelecimento.id}`">
                 <Button
                     label="Agendar"
                     severity="secondary"

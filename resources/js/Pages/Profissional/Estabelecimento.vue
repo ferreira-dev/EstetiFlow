@@ -46,6 +46,28 @@
                     <Message v-if="form.errors.nome_fantasia" severity="error" :closable="false">{{ form.errors.nome_fantasia }}</Message>
                 </div>
 
+                <!-- URL Personalizada -->
+                <div class="space-y-2">
+                    <label for="url_personalizada" class="block text-sm font-medium text-zinc-300">
+                        URL personalizada <span class="text-zinc-500">(opcional)</span>
+                    </label>
+                    <IconField>
+                        <InputIcon class="pi pi-link" />
+                        <InputText
+                            id="url_personalizada"
+                            v-model="form.url_personalizada"
+                            placeholder="nome-do-estabelecimento"
+                            class="w-full"
+                            maxlength="160"
+                            @blur="normalizarUrlPersonalizada"
+                        />
+                    </IconField>
+                    <p class="break-all rounded-lg bg-zinc-900/60 px-3 py-2 text-xs text-zinc-400">
+                        {{ urlPublicaPreview }}
+                    </p>
+                    <Message v-if="form.errors.url_personalizada" severity="error" :closable="false">{{ form.errors.url_personalizada }}</Message>
+                </div>
+
                 <!-- CNPJ -->
                 <div class="space-y-2">
                     <label for="cnpj" class="block text-sm font-medium text-zinc-300">
@@ -256,7 +278,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
@@ -277,6 +299,7 @@ const props = defineProps({
 // ── Form (pré-populado se já existe estabelecimento) ──────────────────────────
 const form = useForm({
     nome_fantasia:       props.estabelecimento?.nome_fantasia       ?? '',
+    url_personalizada:   props.estabelecimento?.url_personalizada   ?? '',
     cnpj:                props.estabelecimento?.cnpj                ?? '',
     descricao:           props.estabelecimento?.descricao           ?? '',
     telefone_principal:  props.estabelecimento?.telefone_principal  ?? '',
@@ -289,6 +312,25 @@ const form = useForm({
     cidade:              props.estabelecimento?.cidade              ?? '',
     estado:              props.estabelecimento?.estado              ?? '',
 })
+
+const baseUrl = window.location.origin
+const slugPreview = computed(() => slugify(form.url_personalizada || form.nome_fantasia))
+const urlPublicaPreview = computed(() => `${baseUrl}/agendar/${slugPreview.value || 'nome-do-estabelecimento'}`)
+
+function slugify(valor) {
+    return valor
+        .toString()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .replace(/-{2,}/g, '-')
+}
+
+function normalizarUrlPersonalizada() {
+    form.url_personalizada = slugify(form.url_personalizada)
+}
 
 // ── Busca de CEP via ViaCEP ────────────────────────────────────────────────────
 const buscandoCep = ref(false)

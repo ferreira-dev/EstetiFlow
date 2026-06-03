@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Estabelecimento;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
 class EstabelecimentoService
@@ -14,15 +15,15 @@ class EstabelecimentoService
     {
         return Estabelecimento::query()
             ->where('ativo', true)
-            ->when($q, fn($query) => $query->where('nome_fantasia', 'like', "%{$q}%"))
-            ->when($categoria, fn($query) => $query->whereHas(
+            ->when($q, fn ($query) => $query->where('nome_fantasia', 'like', "%{$q}%"))
+            ->when($categoria, fn ($query) => $query->whereHas(
                 'profissionais.servicosProfissionais.servico',
-                fn($q2) => $q2->where('categoria', $categoria)->where('ativo', true)
+                fn ($q2) => $q2->where('categoria', $categoria)->where('ativo', true)
             ))
             ->with([
-                'profissionais' => fn($q) => $q->where('aceita_agendamentos', true)
+                'profissionais' => fn ($q) => $q->where('aceita_agendamentos', true)
                     ->with([
-                        'servicosProfissionais' => fn($q2) => $q2->where('ativo', true)
+                        'servicosProfissionais' => fn ($q2) => $q2->where('ativo', true)
                             ->with('servico'),
                     ]),
             ])
@@ -34,22 +35,15 @@ class EstabelecimentoService
      */
     public function buscarComServicos(int $id): ?Estabelecimento
     {
-        return Estabelecimento::where('ativo', true)
-            ->with([
-                'profissionais' => fn($q) => $q->where('aceita_agendamentos', true)
-                    ->with([
-                        'servicosProfissionais' => fn($q2) => $q2->where('ativo', true)
-                            ->with('servico'),
-                        'horariosFuncionamento',
-                        // Só carrega bloqueios relevantes: recorrentes + não expirados
-                        'bloqueiosAgenda' => fn($q3) => $q3->where(
-                            fn($q4) => $q4
-                                ->where('recorrente', true)
-                                ->orWhere('data_fim', '>=', now())
-                        ),
-                    ]),
-            ])
+        return $this->queryComServicos()
             ->findOrFail($id);
+    }
+
+    public function buscarComServicosPorUrl(string $urlPersonalizada): ?Estabelecimento
+    {
+        return $this->queryComServicos()
+            ->where('url_personalizada', $urlPersonalizada)
+            ->firstOrFail();
     }
 
     /**
@@ -62,5 +56,24 @@ class EstabelecimentoService
             ->orderByDesc('created_at')
             ->limit($limite)
             ->get();
+    }
+
+    private function queryComServicos(): Builder
+    {
+        return Estabelecimento::where('ativo', true)
+            ->with([
+                'profissionais' => fn ($q) => $q->where('aceita_agendamentos', true)
+                    ->with([
+                        'servicosProfissionais' => fn ($q2) => $q2->where('ativo', true)
+                            ->with('servico'),
+                        'horariosFuncionamento',
+                        // Só carrega bloqueios relevantes: recorrentes + não expirados
+                        'bloqueiosAgenda' => fn ($q3) => $q3->where(
+                            fn ($q4) => $q4
+                                ->where('recorrente', true)
+                                ->orWhere('data_fim', '>=', now())
+                        ),
+                    ]),
+            ]);
     }
 }
