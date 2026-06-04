@@ -46,6 +46,29 @@
                     <Message v-if="form.errors.nome_fantasia" severity="error" :closable="false">{{ form.errors.nome_fantasia }}</Message>
                 </div>
 
+                <!-- Agenda Online -->
+                <div class="space-y-3 rounded-xl border border-white/10 bg-zinc-900/40 p-4">
+                    <div class="flex items-center justify-between gap-4">
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-zinc-200">Agenda online</p>
+                            <p class="mt-0.5 text-xs text-zinc-400">
+                                Quando ativada, seus clientes podem agendar diretamente pela página do estabelecimento.
+                                Quando desativada, serão redirecionados para o WhatsApp.
+                            </p>
+                        </div>
+                        <div class="flex shrink-0 flex-col items-center gap-1">
+                            <ToggleSwitch
+                                id="agenda_online"
+                                v-model="form.agenda_online"
+                            />
+                            <span class="text-xs font-medium" :class="form.agenda_online ? 'text-green-400' : 'text-zinc-500'">
+                                {{ form.agenda_online ? 'Ativada' : 'Desativada' }}
+                            </span>
+                        </div>
+                    </div>
+                    <Message v-if="form.errors.agenda_online" severity="error" :closable="false">{{ form.errors.agenda_online }}</Message>
+                </div>
+
                 <!-- URL Personalizada -->
                 <div class="space-y-2">
                     <label for="url_personalizada" class="block text-sm font-medium text-zinc-300">
@@ -287,6 +310,7 @@ import Select from 'primevue/select'
 import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
 import Message from 'primevue/message'
+import ToggleSwitch from 'primevue/toggleswitch'
 import DashboardLayout from '@/Layouts/DashboardLayout.vue'
 
 defineOptions({ layout: DashboardLayout })
@@ -300,6 +324,7 @@ const props = defineProps({
 const form = useForm({
     nome_fantasia:       props.estabelecimento?.nome_fantasia       ?? '',
     url_personalizada:   props.estabelecimento?.url_personalizada   ?? '',
+    agenda_online:       props.estabelecimento?.agenda_online       ?? true,
     cnpj:                props.estabelecimento?.cnpj                ?? '',
     descricao:           props.estabelecimento?.descricao           ?? '',
     telefone_principal:  props.estabelecimento?.telefone_principal  ?? '',

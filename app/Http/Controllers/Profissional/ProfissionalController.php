@@ -58,6 +58,7 @@ class ProfissionalController extends Controller
                 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
                 Rule::unique('estabelecimentos', 'url_personalizada')->ignore($estabelecimentoAtual?->id),
             ],
+            'agenda_online'      => ['required', 'boolean'],
             'cnpj' => ['nullable', 'string', 'max:14'],
             'descricao' => ['nullable', 'string'],
             'telefone_principal' => ['required', 'string', 'max:20'],

@@ -130,6 +130,8 @@ const props = defineProps({
     profissionalId:        { type: [String, Number], default: '' },
     horariosFuncionamento: { type: Array,            default: () => [] },
     bloqueios:             { type: Array,            default: () => [] },
+    agendaOnline:          { type: Boolean,          default: true },
+    telefoneWhatsapp:      { type: String,           default: '' },
 })
 
 const page  = usePage()
@@ -269,6 +271,14 @@ watch(dataSelecionada, () => { horaSelecionada.value = null })
 
 // ── Actions ───────────────────────────────────────────────────────────────
 function abrirAgendamento() {
+    // Se agenda online desativada → redireciona para WhatsApp
+    if (!props.agendaOnline) {
+        const telefone = props.telefoneWhatsapp.replace(/\D/g, '')
+        const url = `https://wa.me/55${telefone}`
+        window.open(url, '_blank', 'noopener,noreferrer')
+        return
+    }
+
     if (!page.props.auth?.user) {
         loginDialogVisivel.value = true
         return

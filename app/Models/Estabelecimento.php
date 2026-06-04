@@ -13,6 +13,7 @@ class Estabelecimento extends Model
     protected $fillable = [
         'nome_fantasia',
         'url_personalizada',
+        'agenda_online',
         'cnpj',
         'descricao',
         'foto_capa_url',
@@ -31,9 +32,10 @@ class Estabelecimento extends Model
     ];
 
     protected $casts = [
-        'ativo' => 'boolean',
-        'latitude' => 'decimal:7',
-        'longitude' => 'decimal:7',
+        'ativo'        => 'boolean',
+        'agenda_online' => 'boolean',
+        'latitude'     => 'decimal:7',
+        'longitude'    => 'decimal:7',
     ];
 
     public function getUrlPublicaAttribute(): string

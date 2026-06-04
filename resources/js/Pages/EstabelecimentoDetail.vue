@@ -101,6 +101,8 @@
                                     :profissional-id="prof.id"
                                     :horarios-funcionamento="prof.horarios_funcionamento ?? []"
                                     :bloqueios="prof.bloqueios_agenda ?? []"
+                                    :agenda-online="estabelecimento.agenda_online"
+                                    :telefone-whatsapp="estabelecimento.telefone_principal ?? ''"
                                 />
                             </template>
                         </div>
