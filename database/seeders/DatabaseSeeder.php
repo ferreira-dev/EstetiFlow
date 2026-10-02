@@ -101,8 +101,6 @@ class DatabaseSeeder extends Seeder
         Perfil::create([
             'usuario_id' => $joao->id,
             'telefone'   => '11999001122',
-            'cidade'     => 'São Paulo',
-            'estado'     => 'SP',
         ]);
 
         $profUser = User::create([
@@ -115,8 +113,6 @@ class DatabaseSeeder extends Seeder
         Perfil::create([
             'usuario_id' => $profUser->id,
             'telefone'   => '11988776655',
-            'cidade'     => 'São Paulo',
-            'estado'     => 'SP',
         ]);
 
         $adminUser = User::create([
@@ -138,8 +134,6 @@ class DatabaseSeeder extends Seeder
         Perfil::create([
             'usuario_id' => $maria->id,
             'telefone'   => '11977665544',
-            'cidade'     => 'São Paulo',
-            'estado'     => 'SP',
         ]);
 
         $profUser2 = User::create([
@@ -152,8 +146,6 @@ class DatabaseSeeder extends Seeder
         Perfil::create([
             'usuario_id' => $profUser2->id,
             'telefone'   => '11966554433',
-            'cidade'     => 'São Paulo',
-            'estado'     => 'SP',
         ]);
 
         // ══════════════════════════════════════════════════════════════════
