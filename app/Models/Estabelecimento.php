@@ -10,10 +10,20 @@ class Estabelecimento extends Model
 {
     use SoftDeletes;
 
+    /**
+     * Paletas do tema Aura disponíveis como cor primária do estabelecimento.
+     * Manter em sincronia com resources/js/Constants/coresTema.js.
+     */
+    public const CORES_PRIMARIAS = [
+        'emerald', 'green', 'teal', 'cyan', 'sky', 'blue', 'indigo',
+        'violet', 'purple', 'fuchsia', 'pink', 'rose', 'orange', 'amber',
+    ];
+
     protected $fillable = [
         'nome_fantasia',
         'url_personalizada',
         'agenda_online',
+        'cor_primaria',
         'cnpj',
         'descricao',
         'foto_capa_url',

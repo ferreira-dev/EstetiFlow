@@ -154,6 +154,7 @@ class DatabaseSeeder extends Seeder
         $studioElegance = Estabelecimento::create([
             'nome_fantasia'     => 'Studio Elegance',
             'url_personalizada' => 'studio-elegance',
+            'cor_primaria'      => 'pink',
             'descricao'         => 'Espaço moderno e sofisticado para cuidados estéticos completos. Ambiente climatizado, Wi-Fi gratuito e atendimento personalizado.',
             'foto_capa_url'     => 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=800',
             'telefone_principal' => '11999887766',
@@ -170,6 +171,7 @@ class DatabaseSeeder extends Seeder
         $barbeariaVintage = Estabelecimento::create([
             'nome_fantasia'     => 'Barbearia Vintage',
             'url_personalizada' => 'barbearia-vintage',
+            'cor_primaria'      => 'blue',
             'descricao'         => 'Barbearia clássica com toque moderno. Experiência única de corte e barba com cerveja artesanal.',
             'foto_capa_url'     => 'https://images.unsplash.com/photo-1503951914875-452c29dbb399?w=800',
             'telefone_principal' => '11988776655',
@@ -185,6 +187,7 @@ class DatabaseSeeder extends Seeder
         $nailArt = Estabelecimento::create([
             'nome_fantasia'     => 'Nail Art Studio',
             'url_personalizada' => 'nail-art-studio',
+            'cor_primaria'      => 'fuchsia',
             'descricao'         => 'Especialistas em nail art, esmaltação em gel e cuidados para mãos e pés. Ambiente relaxante.',
             'foto_capa_url'     => 'https://images.unsplash.com/photo-1604654894610-df63bc536371?w=800',
             'telefone_principal' => '11977665544',
@@ -200,6 +203,7 @@ class DatabaseSeeder extends Seeder
         $espacoBeleza = Estabelecimento::create([
             'nome_fantasia'     => 'Espaço Beleza & Bem-Estar',
             'url_personalizada' => 'espaco-beleza-bem-estar',
+            'cor_primaria'      => 'teal',
             'descricao'         => 'Centro completo de beleza com serviços de cabelo, estética facial, massagem e depilação. Profissionais certificados.',
             'foto_capa_url'     => 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800',
             'telefone_principal' => '11966554433',
@@ -216,6 +220,7 @@ class DatabaseSeeder extends Seeder
         $barberKing = Estabelecimento::create([
             'nome_fantasia'     => 'Barber King',
             'url_personalizada' => 'barber-king',
+            'cor_primaria'      => 'indigo',
             'descricao'         => 'Barbearia premium com ambiente exclusivo. Cortes modernos, barba estilizada e tratamentos capilares.',
             'foto_capa_url'     => 'https://images.unsplash.com/photo-1585747860019-8e79b4c37c8a?w=800',
             'telefone_principal' => '11955443322',
@@ -231,6 +236,7 @@ class DatabaseSeeder extends Seeder
         $studioSobrancelhas = Estabelecimento::create([
             'nome_fantasia'     => 'Studio Sobrancelhas & Cílios',
             'url_personalizada' => 'studio-sobrancelhas-cilios',
+            'cor_primaria'      => 'rose',
             'descricao'         => 'Referência em design de sobrancelhas, micropigmentação e extensão de cílios. Resultado natural e duradouro.',
             'foto_capa_url'     => 'https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?w=800',
             'telefone_principal' => '11944332211',

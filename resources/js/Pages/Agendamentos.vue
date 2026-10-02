@@ -10,7 +10,7 @@
         <div class="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-6">
             <div class="stat-card stat-card--primary">
                 <div class="relative z-10 flex items-center gap-3">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-xl" style="background: rgba(var(--p-primary-500), 0.2)">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl" style="background: color-mix(in srgb, var(--p-primary-500) 20%, transparent)">
                         <CalendarDays class="h-5 w-5" style="color: var(--p-primary-color)" />
                     </div>
                     <div>

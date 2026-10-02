@@ -117,6 +117,8 @@ Módulo de Engajamento       → avaliacoes, notificacoes
     "url_personalizada": "varchar(160) not null unique",
     "agenda_online": "tinyint(1) not null default 1",
     "_agenda_online_nota": "Flag que controla se o agendamento online está habilitado. Quando 0 (false), o botão 'Reservar' na página do estabelecimento redireciona para o WhatsApp (wa.me/55{telefone_principal}) em vez de abrir o modal de agendamento.",
+    "cor_primaria": "varchar(20) not null default 'emerald'",
+    "_cor_primaria_nota": "Nome da paleta primária do tema Aura (PrimeVue) escolhida pelo dono. Valores permitidos em Estabelecimento::CORES_PRIMARIAS (espelhado em resources/js/Constants/coresTema.js). Aplicada via updatePrimaryPalette na página pública (/agendar/{url}) e no painel profissional.",
     "cnpj": "char(14) null unique",
     "descricao": "text null",
     "foto_capa_url": "varchar(500) null",

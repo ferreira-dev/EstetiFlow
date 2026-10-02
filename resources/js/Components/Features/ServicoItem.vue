@@ -2,7 +2,7 @@
     <div class="glass-card p-3">
         <div class="flex items-center gap-3">
             <!-- Imagem -->
-            <div class="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-lg" style="background: rgba(var(--p-primary-500), 0.1)">
+            <div class="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-lg" style="background: color-mix(in srgb, var(--p-primary-500) 10%, transparent)">
                 <i class="pi pi-scissors text-3xl" style="color: var(--p-primary-color)"></i>
             </div>
 

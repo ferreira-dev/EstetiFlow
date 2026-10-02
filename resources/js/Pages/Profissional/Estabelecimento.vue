@@ -69,6 +69,46 @@
                     <Message v-if="form.errors.agenda_online" severity="error" :closable="false">{{ form.errors.agenda_online }}</Message>
                 </div>
 
+                <!-- Cor da marca -->
+                <div class="space-y-4 rounded-xl border border-white/10 bg-zinc-900/40 p-4">
+                    <div>
+                        <p class="text-sm font-medium text-zinc-200">Cor da marca</p>
+                        <p class="mt-0.5 text-xs text-zinc-400">
+                            Define a cor de destaque da página do seu estabelecimento e deste painel.
+                            Ao selecionar, o painel mostra uma prévia; a cor só é aplicada aos clientes após salvar.
+                        </p>
+                    </div>
+                    <SelectButton
+                        id="cor_primaria"
+                        v-model="form.cor_primaria"
+                        :options="CORES_TEMA"
+                        option-label="label"
+                        option-value="valor"
+                        :allow-empty="false"
+                        aria-label="Cor da marca"
+                        class="flex flex-wrap"
+                    >
+                        <template #option="{ option }">
+                            <span
+                                class="h-3.5 w-3.5 shrink-0 rounded-full transition-shadow"
+                                :class="option.valor === form.cor_primaria
+                                    ? 'ring-2 ring-white ring-offset-2 ring-offset-zinc-900'
+                                    : 'ring-1 ring-white/20'"
+                                :style="{ background: `var(--p-${option.valor}-400)` }"
+                            />
+                            <span class="text-sm">{{ option.label }}</span>
+                        </template>
+                    </SelectButton>
+                    <div class="flex flex-wrap items-center gap-3 border-t border-white/5 pt-4">
+                        <span class="text-xs text-zinc-500">Prévia:</span>
+                        <Button label="Reservar" icon="pi pi-calendar" size="small" type="button" />
+                        <Button label="Ver serviços" size="small" type="button" outlined />
+                        <Tag value="Destaque" />
+                        <ToggleSwitch :model-value="true" aria-label="Exemplo de seleção" />
+                    </div>
+                    <Message v-if="form.errors.cor_primaria" severity="error" :closable="false">{{ form.errors.cor_primaria }}</Message>
+                </div>
+
                 <!-- URL Personalizada -->
                 <div class="space-y-2">
                     <label for="url_personalizada" class="block text-sm font-medium text-zinc-300">
@@ -302,7 +342,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { useForm } from '@inertiajs/vue3'
+import { useForm, usePage } from '@inertiajs/vue3'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
@@ -311,7 +351,11 @@ import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
 import Message from 'primevue/message'
 import ToggleSwitch from 'primevue/toggleswitch'
+import SelectButton from 'primevue/selectbutton'
+import Tag from 'primevue/tag'
 import DashboardLayout from '@/Layouts/DashboardLayout.vue'
+import { useCorTema } from '@/Composables/useCorTema'
+import { CORES_TEMA, COR_PADRAO } from '@/Constants/coresTema'
 
 defineOptions({ layout: DashboardLayout })
 
@@ -325,6 +369,7 @@ const form = useForm({
     nome_fantasia:       props.estabelecimento?.nome_fantasia       ?? '',
     url_personalizada:   props.estabelecimento?.url_personalizada   ?? '',
     agenda_online:       props.estabelecimento?.agenda_online       ?? true,
+    cor_primaria:        props.estabelecimento?.cor_primaria        ?? COR_PADRAO,
     cnpj:                props.estabelecimento?.cnpj                ?? '',
     descricao:           props.estabelecimento?.descricao           ?? '',
     telefone_principal:  props.estabelecimento?.telefone_principal  ?? '',
@@ -337,6 +382,10 @@ const form = useForm({
     cidade:              props.estabelecimento?.cidade              ?? '',
     estado:              props.estabelecimento?.estado              ?? '',
 })
+
+// Preview ao vivo: o painel assume a cor selecionada; ao sair sem salvar, volta à cor salva
+const page = usePage()
+useCorTema(() => form.cor_primaria, { aoSair: () => page.props.corTema })
 
 const baseUrl = window.location.origin
 const slugPreview = computed(() => slugify(form.url_personalizada || form.nome_fantasia))

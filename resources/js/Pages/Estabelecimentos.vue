@@ -9,7 +9,7 @@
             </div>
             <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div class="flex items-center gap-3">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-xl" style="background: rgba(var(--p-primary-500), 0.1);">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl" style="background: color-mix(in srgb, var(--p-primary-500) 10%, transparent);">
                         <Search class="h-5 w-5" style="color: var(--p-primary-color)" />
                     </div>
                     <div>
@@ -31,7 +31,7 @@
         <div v-if="resultados.length > 0" class="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-6">
             <div class="stat-card stat-card--primary">
                 <div class="relative z-10 flex items-center gap-3">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-xl" style="background: rgba(var(--p-primary-500), 0.2)">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl" style="background: color-mix(in srgb, var(--p-primary-500) 20%, transparent)">
                         <Search class="h-5 w-5" style="color: var(--p-primary-color)" />
                     </div>
                     <div>
@@ -89,7 +89,7 @@
 
         <!-- Estado vazio -->
         <div v-if="resultados.length === 0" class="glass-card p-8 text-center lg:p-16">
-            <div class="mx-auto mb-6 flex h-28 w-28 items-center justify-center rounded-full" style="background: linear-gradient(135deg, rgba(var(--p-primary-500), 0.2), rgba(var(--p-primary-500), 0.1))">
+            <div class="mx-auto mb-6 flex h-28 w-28 items-center justify-center rounded-full" style="background: linear-gradient(135deg, color-mix(in srgb, var(--p-primary-500) 20%, transparent), color-mix(in srgb, var(--p-primary-500) 10%, transparent))">
                 <Search class="h-14 w-14" style="color: var(--p-primary-color)" />
             </div>
             <h3 class="mb-3 text-2xl font-bold text-white">Nenhum estabelecimento encontrado</h3>
@@ -115,7 +115,7 @@
 
         <!-- CTA -->
         <div v-if="resultados.length > 0" class="mt-16">
-            <div class="glass-card p-8 text-center lg:p-12" style="border-color: rgba(var(--p-primary-500), 0.2)">
+            <div class="glass-card p-8 text-center lg:p-12" style="border-color: color-mix(in srgb, var(--p-primary-500) 20%, transparent)">
                 <h3 class="mb-3 text-2xl font-bold text-white">Não encontrou o que procurava?</h3>
                 <p class="mx-auto mb-6 max-w-2xl text-zinc-400">
                     Entre em contato para sugerir novos estabelecimentos ou serviços.

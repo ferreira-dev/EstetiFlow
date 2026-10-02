@@ -36,6 +36,8 @@ class HandleInertiaRequests extends Middleware
                 'roles'       => $request->user()?->getRoleNames(),
                 'permissions' => $request->user()?->getAllPermissions()->pluck('name'),
             ],
+            // Cor primária do estabelecimento do profissional logado (tema do painel)
+            'corTema' => fn () => $request->user()?->profissional?->estabelecimento?->cor_primaria,
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error'   => fn () => $request->session()->get('error'),
