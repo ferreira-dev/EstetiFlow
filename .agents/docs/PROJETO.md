@@ -552,3 +552,4 @@ estabelecimentos.cor_primaria ('pink', 'blue', ...)
 | **Arquitetura de Banco** | `.agents/skills/database-architect/SKILL.md` | Metodologia de modelagem MySQL/MariaDB (skill comportamental) |
 | **Guia PrimeVue 4** | `.agents/rules/primevue4-guide.txt` | Dicas específicas para componentes PrimeVue |
 | **Padrões do Projeto** | `.agents/rules/project-standards.md` | Rules de código, segurança e automação |
+| **Tasks de prontidão do MVP** | `.agents/tasks/README.md` | Índice, protocolo de execução por agentes e tasks pendentes para ir a produção |
