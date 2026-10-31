@@ -214,10 +214,23 @@ class AgendamentoService
 
 ### Autenticação
 
-1. POST `/login` → `Auth::attempt()` → sessão Laravel
+1. POST `/login` → `Auth::attempt()` (apenas `ativo = 1`) → sessão Laravel. Throttle de 5 tentativas/min por e-mail+IP (`RateLimiter`) + `throttle:20,1` por IP na rota
 2. `HandleInertiaRequests::share()` → expõe `auth.user` + `auth.roles` globalmente
 3. Rotas protegidas → middleware `auth` (cliente + profissional) ou `auth` + `role:profissional`
 4. Frontend → `usePage().props.auth?.user` (null se não autenticado)
+5. **Esqueci minha senha:** `/esqueci-senha` → broker nativo (`Password::sendResetLink`) → e-mail PT-BR (`RedefinirSenhaNotification`) → `/redefinir-senha/{token}`. Resposta sempre neutra; inativos não recebem link
+6. **Pré-cadastro (cliente sem e-mail/senha criado pelo profissional):** só vira conta com login pelo link gerado no painel (popover do cliente em Agendamentos → "Enviar link de cadastro" via WhatsApp). Token aleatório com hash em `convites_cadastro`, 48h, uso único. Registro/login públicos **nunca** dão acesso a um pré-cadastro (registro com o mesmo telefone cria conta nova)
+
+### Fuso horário e idioma
+
+- Fixo `America/Sao_Paulo` + `pt_BR` (`APP_TIMEZONE`, `APP_LOCALE`). O front envia hora local (`yyyy-MM-dd HH:mm:ss`) e o backend a interpreta no mesmo fuso
+- A sessão MySQL usa o offset do fuso da aplicação (`config/database.php` → `timezone`)
+- Traduções em `lang/pt_BR` (validation, auth, passwords, pagination)
+
+### Testes
+
+- `php artisan test` (dentro do container `php-fpm`) usa o banco **`schedule_saas_testing`** (definido no `phpunit.xml`, com `RefreshDatabase`). `tests/TestCase.php` aborta se o banco não terminar em `_testing`
+- Cenário compartilhado: `tests/Concerns/CriaCenarioAgendamento.php`
 
 ---
 
@@ -267,7 +280,9 @@ class AgendamentoService
 
 | Funcionalidade | Implementação | Observação |
 |---------------|---------------|------------|
-| **Criar agendamento** | `POST /agendamentos` | Status vai direto para `confirmado`, pulando `pendente` intencionalmente no MVP |
+| **Criar agendamento** | `POST /agendamentos` | Status vai direto para `confirmado`, pulando `pendente` intencionalmente no MVP. Payload: só `servico_profissional_id` + `data_hora_inicio` (`CriarAgendamentoRequest`) |
+| **Integridade na criação** | `AgendamentoService::criar()` | Preço/duração/nome derivados de `servicos_profissionais`; valida vínculo/serviço ativos; fluxo do cliente exige `aceita_agendamentos`, estabelecimento ativo e `agenda_online`; painel (`POST /profissional/agendamentos`) aceita só serviços do próprio profissional, mesmo com agenda online desligada. `lockForUpdate` na linha do profissional evita reserva dupla |
+| **Busca de clientes (painel)** | `GET /profissional/agendamentos/buscar-cliente` | Busca parcial só na carteira do profissional; fora dela só match exato de e-mail/telefone com dados mascarados (LGPD). `throttle:30,1` |
 | **Cancelar pelo cliente** | `DELETE /agendamentos/{id}` | Grava `cancelado_cliente` + `HistoricoAgendamento` |
 | **Snapshot de preço** | `ItemAgendamento` | `nome_servico`, `preco_praticado` e `tempo_execucao_minutos` preservados no momento do agendamento |
 | **Auditoria de status** | `HistoricoAgendamento` | Cada mudança de status grava `status_anterior`, `status_novo`, `alterado_por_id` |
@@ -398,7 +413,6 @@ agendamentos.profissional_id
 |---------------|------------|
 | **Seleção de profissional no agendamento** | Cliente escolhe serviço mas não seleciona profissional explicitamente. `ServicoItem.vue` já recebe `horarios_funcionamento` e `bloqueios`, mas a seleção guiada falta. |
 | **Status detalhado no card do cliente** | `AgendamentoCard.vue` usa status simplificado. Falta exibir todos os 7 status com ícones e cores corretos. |
-| **Snapshot de preço (garantia)** | Agendamentos criam itens com snapshot, mas deve ser auditado em todos os fluxos. |
 | **Geolocalização** | Colunas `latitude`/`longitude` existem em `estabelecimentos`. Falta busca por proximidade no frontend/backend. |
 
 ### ❌ Não implementado — Criar do zero
@@ -434,11 +448,11 @@ agendamentos.profissional_id
 - DashboardLayout com menu lateral (7 itens)
 - 6 containers Docker (webserver, php-fpm, node, mysql, redis, mailhog)
 - Cor da marca por estabelecimento (tema primário dinâmico do Aura) — ver seção 9
+- Task 1 de prontidão (segurança e integridade): snapshot de preço garantido no backend, busca de clientes isolada por carteira, convite de cadastro com token seguro, lock contra reserva dupla, fuso/idioma BR, recuperação de senha e throttle de login
 
 ### Fase Atual: Polimento do Fluxo do Cliente
 1. Aprimorar seleção de profissional no fluxo de agendamento público (Step 0 no Drawer)
 2. Atualizar `AgendamentoCard.vue` do cliente para todos os 7 status
-3. Garantir snapshot de preço em todos os fluxos
 
 ### Próxima Fase: Geolocalização e Automações
 1. Busca por proximidade usando lat/lng de `estabelecimentos`

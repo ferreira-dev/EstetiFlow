@@ -95,10 +95,9 @@
                                 <ServicoItem
                                     v-for="sp in prof.servicos_profissionais"
                                     :key="sp.id"
-                                    :servico="{ ...sp.servico, preco: sp.preco, tempo_execucao_minutos: sp.tempo_execucao_minutos }"
+                                    :servico="{ ...sp.servico, servico_profissional_id: sp.id, preco: sp.preco, tempo_execucao_minutos: sp.tempo_execucao_minutos }"
                                     :nome-estabelecimento="estabelecimento.nome_fantasia"
                                     :estabelecimento-id="estabelecimento.id"
-                                    :profissional-id="prof.id"
                                     :horarios-funcionamento="prof.horarios_funcionamento ?? []"
                                     :bloqueios="prof.bloqueios_agenda ?? []"
                                     :agenda-online="estabelecimento.agenda_online"

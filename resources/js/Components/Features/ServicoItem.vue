@@ -127,7 +127,6 @@ const props = defineProps({
     servico:               { type: Object,           required: true },
     nomeEstabelecimento:   { type: String,           default: '' },
     estabelecimentoId:     { type: [String, Number], default: '' },
-    profissionalId:        { type: [String, Number], default: '' },
     horariosFuncionamento: { type: Array,            default: () => [] },
     bloqueios:             { type: Array,            default: () => [] },
     agendaOnline:          { type: Boolean,          default: true },
@@ -290,13 +289,10 @@ function confirmarAgendamento() {
     if (!dataHoraCompleta.value) return
     enviando.value = true
 
+    // Preço, duração e nome são definidos pelo backend a partir do cadastro do serviço
     router.post('/agendamentos', {
-        profissional_id:        props.profissionalId,
-        servico_id:             props.servico.id,
-        data_hora_inicio:       format(dataHoraCompleta.value, 'yyyy-MM-dd HH:mm:ss'),
-        preco:                  props.servico.preco,
-        tempo_execucao_minutos: props.servico.tempo_execucao_minutos,
-        nome_servico:           props.servico.nome,
+        servico_profissional_id: props.servico.servico_profissional_id,
+        data_hora_inicio:        format(dataHoraCompleta.value, 'yyyy-MM-dd HH:mm:ss'),
     }, {
         onSuccess: () => {
             toast.add({ severity: 'success', summary: 'Reserva criada!', detail: 'Seu agendamento foi confirmado.', life: 5000 })

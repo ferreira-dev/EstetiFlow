@@ -34,7 +34,12 @@
 
                 <!-- Senha -->
                 <div class="space-y-2">
-                    <label for="senha" class="block text-sm font-medium text-zinc-300">Senha</label>
+                    <div class="flex items-center justify-between">
+                        <label for="senha" class="block text-sm font-medium text-zinc-300">Senha</label>
+                        <Link href="/esqueci-senha" class="text-xs transition-colors hover:text-white" style="color: var(--p-primary-color)">
+                            Esqueci minha senha
+                        </Link>
+                    </div>
                     <Password
                         id="senha"
                         v-model="form.password"

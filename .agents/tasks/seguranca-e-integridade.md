@@ -1,6 +1,6 @@
 # Task 1 — Segurança e Integridade dos Dados
 
-- [ ] **Status geral: task concluída** (marcar quando todos os itens abaixo estiverem `[x]` ou `[-]`)
+- [x] **Status geral: task concluída** (marcar quando todos os itens abaixo estiverem `[x]` ou `[-]`)
 
 > **Prioridade:** 🔴 Bloqueadora — nenhum cliente real antes destes itens.
 > **Por quê (Lean):** um MVP precisa ser *viável*. Preço adulterado, reserva dupla ou vazamento de dados fazem o profissional abandonar o produto pela falha, não pela proposta — o experimento fica inválido.
@@ -10,7 +10,7 @@
 
 ## 1.1 Preço, duração e nome do serviço vêm do navegador
 
-- [ ] **Item concluído**
+- [x] **Item concluído**
 
 **Problema**
 - Em [AgendamentoController.php](../../app/Http/Controllers/AgendamentoController.php) (`store`), os campos `preco`, `tempo_execucao_minutos` e `nome_servico` são aceitos do request e gravados como snapshot.
@@ -31,10 +31,10 @@
 4. Mensagem ao cliente quando o serviço ficou indisponível entre abrir a página e confirmar: toast genérico ou mensagem específica?
 
 **Critérios de aceite**
-- [ ] Payload de criação (cliente e profissional) não contém mais `preco`, `tempo_execucao_minutos`, `nome_servico`.
-- [ ] Preço/tempo/nome do snapshot em `itens_agendamentos` vêm sempre de `servicos_profissionais`/`servicos`.
-- [ ] Requisição com `servico_profissional_id` de outro profissional, inativo, ou estabelecimento com `agenda_online = 0` é rejeitada (fluxo cliente).
-- [ ] Front atualizado e fluxo de reserva funcionando ponta a ponta.
+- [x] Payload de criação (cliente e profissional) não contém mais `preco`, `tempo_execucao_minutos`, `nome_servico`.
+- [x] Preço/tempo/nome do snapshot em `itens_agendamentos` vêm sempre de `servicos_profissionais`/`servicos`.
+- [x] Requisição com `servico_profissional_id` de outro profissional, inativo, ou estabelecimento com `agenda_online = 0` é rejeitada (fluxo cliente).
+- [x] Front atualizado e fluxo de reserva funcionando ponta a ponta.
 
 **Como testar**
 - Teste de feature: POST `/agendamentos` com payload adulterado (`preco: 0.01`) → snapshot grava o preço real.
@@ -42,13 +42,14 @@
 - Manual: reservar pela página pública e conferir `valor_total` e `itens_agendamentos` no banco.
 
 **Registro de execução**
-> _(preencher: data · respostas das perguntas · decisões)_
+> 2026-10-26 · Respostas: (1) sim, profissional agenda manualmente com `agenda_online` desligada; (2) Form Request `CriarAgendamentoRequest` + regras de negócio em `AgendamentoService::criar`; (3) não, preço sempre do cadastro; (4) mensagem específica "Este serviço não está mais disponível para agendamento. Atualize a página e tente novamente."
+> Decisões: payload passa a ser `servico_profissional_id` + `data_hora_inicio` (+ `cliente_id` no painel). O service deriva profissional, preço, duração e nome do banco e valida vínculo/serviço ativos; no fluxo do cliente também `aceita_agendamentos`, estabelecimento ativo e `agenda_online`; no painel, o serviço precisa ser do próprio profissional. Correção extra: `historico_agendamentos.alterado_por_id` no painel passa a ser o profissional (antes gravava o cliente). Testes: `tests/Feature/CriarAgendamentoTest.php`; validado também no app de dev (POST com `preco: 0.01` gravou R$ 85,00 do cadastro).
 
 ---
 
 ## 1.2 Vazamento de dados de clientes entre estabelecimentos (LGPD)
 
-- [ ] **Item concluído**
+- [x] **Item concluído**
 
 **Problema**
 - `buscarCliente` em [AgendamentoProfissionalController.php](../../app/Http/Controllers/Profissional/AgendamentoProfissionalController.php) busca em **todos os usuários `cliente` da plataforma** por qualquer trecho (≥ 3 caracteres) de e-mail ou telefone.
@@ -67,23 +68,24 @@
 4. Limite de throttle aceitável na busca? (Recomendado: 30 req/min)
 
 **Critérios de aceite**
-- [ ] Profissional A não encontra, por busca parcial, cliente que só agendou com profissional B.
-- [ ] Data de nascimento não é exposta fora da carteira do profissional.
-- [ ] Telefones normalizados na gravação e na busca.
-- [ ] Rota com `throttle`.
+- [x] Profissional A não encontra, por busca parcial, cliente que só agendou com profissional B.
+- [x] Data de nascimento não é exposta fora da carteira do profissional.
+- [x] Telefones normalizados na gravação e na busca.
+- [x] Rota com `throttle`.
 
 **Como testar**
 - Teste de feature com dois profissionais e clientes distintos: busca do profissional A não retorna clientes do B.
 - Manual: no `NovoAgendamentoDialog`, buscar trecho de e-mail de cliente de outro estabelecimento → sem resultado.
 
 **Registro de execução**
-> _(preencher)_
+> 2026-10-26 · Respostas: (1) A+B; (2) fora da carteira: nome + telefone mascarado (`(11) *****-6666`), sem e-mail e sem nascimento; (3) comando artisan `php artisan telefones:normalizar` (executado com permissão no dev: 0 registros alterados); (4) 30 req/min.
+> Decisões: carteira = clientes com agendamento com o profissional (busca parcial por nome, e-mail ou telefone); fora dela só match exato de e-mail ou telefone (≥ 10 dígitos). Telefone normalizado por mutator em `Perfil` (`App\Support\Telefone`) e na busca/filtro de agendamentos. Testes: `tests/Feature/BuscarClienteTest.php`.
 
 ---
 
 ## 1.3 Sequestro de conta via pré-cadastro
 
-- [ ] **Item concluído**
+- [x] **Item concluído**
 
 **Problema**
 - Em [RegistroController.php](../../app/Http/Controllers/Auth/RegistroController.php), se alguém se registra informando o **telefone** de um cliente pré-cadastrado (sem senha), é redirecionado para `completar-cadastro` e define e-mail + senha — assumindo a conta, o histórico e os dados pessoais de outra pessoa.
@@ -102,10 +104,10 @@
 4. Registro público com telefone já pré-cadastrado: criar conta nova silenciosamente ou avisar "peça o link ao seu profissional"?
 
 **Critérios de aceite**
-- [ ] Não é possível obter o link de completar cadastro de outra pessoa informando apenas telefone ou e-mail.
-- [ ] Token aleatório, com expiração e uso único.
-- [ ] Profissional consegue gerar/compartilhar o link a partir do painel.
-- [ ] Schema doc atualizado se houver nova tabela/coluna.
+- [x] Não é possível obter o link de completar cadastro de outra pessoa informando apenas telefone ou e-mail.
+- [x] Token aleatório, com expiração e uso único.
+- [x] Profissional consegue gerar/compartilhar o link a partir do painel.
+- [x] Schema doc atualizado se houver nova tabela/coluna.
 
 **Como testar**
 - Teste de feature: registro com telefone de pré-cadastrado não redireciona para `completar-cadastro`.
@@ -113,13 +115,14 @@
 - Manual: gerar link no painel, abrir em aba anônima, completar cadastro, tentar reutilizar o link.
 
 **Registro de execução**
-> _(preencher)_
+> 2026-10-26 · Respostas: (1) link gerado pelo profissional e enviado por WhatsApp; (2) tabela própria `convites_cadastro`; (3) expiração de **48 horas** (em vez dos 7 dias sugeridos); (4) registro público com telefone de pré-cadastro cria conta nova, sem aviso.
+> Decisões: token `Str::random(64)` com hash sha256, uso único e revogação do link anterior a cada novo convite (`ConviteCadastroService`). Botão "Enviar link de cadastro" no popover do cliente em `AgendamentosProfissional.vue` (só para cliente pré-cadastrado da carteira). `RegistroController` e `LoginController` não geram mais link. Migration `2026_10_26_000001_create_convites_cadastro_table` executada no dev com permissão. Testes: `tests/Feature/ConviteCadastroTest.php`. Pendente: clique manual no botão do painel (UI só validada por compilação no Vite).
 
 ---
 
 ## 1.4 Reserva dupla por condição de corrida
 
-- [ ] **Item concluído**
+- [x] **Item concluído**
 
 **Problema**
 - `AgendamentoService::criar` ([AgendamentoService.php](../../app/Services/AgendamentoService.php)) checa disponibilidade e depois insere dentro de `DB::transaction`, mas **sem lock**. Duas requisições simultâneas para o mesmo horário passam na checagem e ambas são gravadas.
@@ -134,21 +137,22 @@
 3. Aplicar o mesmo lock na alteração de status/cancelamento? (Recomendado: não necessário no MVP)
 
 **Critérios de aceite**
-- [ ] Checagem de disponibilidade + insert ocorrem sob lock por profissional.
-- [ ] Teste comprova que o segundo agendamento sobreposto é rejeitado.
+- [x] Checagem de disponibilidade + insert ocorrem sob lock por profissional.
+- [x] Teste comprova que o segundo agendamento sobreposto é rejeitado.
 
 **Como testar**
 - Teste de feature: criar dois agendamentos sobrepostos em sequência → o segundo falha (cobertura da lógica).
 - Manual (opcional): disparar duas requisições simultâneas (ex.: `curl` em paralelo com mesma sessão) e conferir que só uma é gravada.
 
 **Registro de execução**
-> _(preencher)_
+> 2026-10-26 · Respostas: (1) `lockForUpdate` na linha do profissional; (2) mensagem de conflito atual; (3) sem lock em status/cancelamento.
+> Decisões: lock aplicado dentro da transação de `AgendamentoService::criar`, antes da checagem de disponibilidade. Teste em `CriarAgendamentoTest::test_segundo_agendamento_sobreposto_e_rejeitado`; validado também no app de dev (segunda reserva sobreposta não foi gravada).
 
 ---
 
 ## 1.5 Fuso horário e idioma
 
-- [ ] **Item concluído**
+- [x] **Item concluído**
 
 **Problema**
 - `.env.example` traz `APP_TIMEZONE=UTC` e `APP_LOCALE=en`.
@@ -168,23 +172,24 @@
 3. Ajustar dados de agendamentos já gravados em UTC? (Recomendado: não — ambiente ainda sem clientes reais; usar `migrate:fresh --seed` com permissão)
 
 **Critérios de aceite**
-- [ ] `.env.example` atualizado; usuário orientado sobre o `.env`.
-- [ ] Reserva para daqui a 1h é aceita.
-- [ ] Dashboard "hoje" correto após 21h.
-- [ ] Mensagens de validação em PT-BR.
+- [x] `.env.example` atualizado; usuário orientado sobre o `.env`.
+- [x] Reserva para daqui a 1h é aceita.
+- [x] Dashboard "hoje" correto após 21h.
+- [x] Mensagens de validação em PT-BR.
 
 **Como testar**
 - Teste de feature com `Carbon::setTestNow()` às 20h30 de Brasília: reserva para 22h aceita; agenda do dia mostra o dia correto.
 - Manual: submeter formulário vazio e conferir mensagens em PT-BR.
 
 **Registro de execução**
-> _(preencher)_
+> 2026-10-26 · Respostas: (1) fuso fixo `America/Sao_Paulo`; (2) arquivos `lang/pt_BR` escritos manualmente (validation, auth, passwords, pagination), sem dependência nova; (3) não ajustar dados antigos.
+> Decisões: `.env.example` e defaults de `config/app.php` atualizados; conexão MySQL usa `timezone` com o offset do fuso da aplicação (`DB_TIMEZONE` opcional). **Pendente no `.env` do usuário:** `APP_TIMEZONE=America/Sao_Paulo`, `APP_LOCALE=pt_BR`, `APP_FAKER_LOCALE=pt_BR`. Testes: `tests/Feature/FusoHorarioTest.php` (rodam com o fuso/idioma definidos no `phpunit.xml`).
 
 ---
 
 ## 1.6 Recuperação de senha, throttle de login e usuário inativo
 
-- [ ] **Item concluído**
+- [x] **Item concluído**
 
 **Problema**
 - Não existe "Esqueci minha senha": cliente real que esquece a senha fica preso (e vira suporte para o profissional).
@@ -205,9 +210,9 @@
 4. Layout das novas telas: reaproveitar visual do `Login.vue` integralmente?
 
 **Critérios de aceite**
-- [ ] Fluxo completo de reset funcionando (solicitar → e-mail → redefinir → login).
-- [ ] E-mail de reset em PT-BR.
-- [ ] Login com throttle; usuário inativo não autentica.
+- [x] Fluxo completo de reset funcionando (solicitar → e-mail → redefinir → login).
+- [x] E-mail de reset em PT-BR.
+- [x] Login com throttle; usuário inativo não autentica.
 
 **Como testar**
 - Teste de feature: `Notification::fake()` + solicitar reset → notificação enviada; redefinir com token válido → senha alterada.
@@ -215,4 +220,5 @@
 - Manual: 6 tentativas de login erradas → bloqueio temporário.
 
 **Registro de execução**
-> _(preencher)_
+> 2026-10-26 · Respostas: (1) link nativo por e-mail; (2) pré-cadastrados sem e-mail ficam no fluxo 1.3; (3) 5 tentativas/min por e-mail+IP; (4) visual do `Login.vue` reaproveitado.
+> Decisões: `EsqueciSenhaController`/`RedefinirSenhaController` + `EsqueciSenha.vue`/`RedefinirSenha.vue`; resposta neutra (não revela se o e-mail existe); usuário inativo não recebe link nem autentica (mensagem neutra). Throttle: `RateLimiter` 5/min por e-mail+IP no login, `throttle:20,1` por IP na rota de login e `throttle:5,1` nos POSTs de reset/completar cadastro. Notificação `RedefinirSenhaNotification` em PT-BR. `AuthLayout` passou a exibir flash como toast. Testes: `tests/Feature/RecuperarSenhaTest.php`. **Pendente:** teste manual com Mailhog — requer no `.env`: `MAIL_MAILER=smtp`, `MAIL_HOST=mailhog`, `MAIL_PORT=1025`.

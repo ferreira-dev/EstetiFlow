@@ -6,11 +6,15 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class LoginController extends Controller
 {
+    private const MAX_TENTATIVAS = 5;
+
     public function create(): Response
     {
         return Inertia::render('Login');
@@ -23,14 +27,20 @@ class LoginController extends Controller
             'password' => ['required'],
         ]);
 
-        $user = \App\Models\User::where('email', $credentials['email'])->first();
+        // Throttle por e-mail + IP (força bruta)
+        $chaveThrottle = Str::transliterate(Str::lower($credentials['email']) . '|' . $request->ip());
 
-        if ($user && $user->password === null) {
-            return redirect()->route('completar-cadastro', ['token' => encrypt($user->id)])
-                ->with('info', 'Encontramos um pré-cadastro no seu nome. Complete seu cadastro para continuar.');
+        if (RateLimiter::tooManyAttempts($chaveThrottle, self::MAX_TENTATIVAS)) {
+            $segundos = RateLimiter::availableIn($chaveThrottle);
+
+            return back()->withErrors([
+                'email' => "Muitas tentativas de login. Tente novamente em {$segundos} segundos.",
+            ])->onlyInput('email');
         }
 
-        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+        // Usuário inativo não autentica (mesma mensagem neutra de credenciais inválidas)
+        if (Auth::attempt([...$credentials, 'ativo' => true], $request->boolean('remember'))) {
+            RateLimiter::clear($chaveThrottle);
             $request->session()->regenerate();
 
             $destino = Auth::user()->hasRole('profissional')
@@ -39,6 +49,8 @@ class LoginController extends Controller
 
             return redirect()->intended($destino);
         }
+
+        RateLimiter::hit($chaveThrottle);
 
         return back()->withErrors([
             'email' => 'As credenciais fornecidas estão incorretas.',

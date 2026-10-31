@@ -7,12 +7,17 @@ use App\Models\BloqueioAgenda;
 use App\Models\HorarioFuncionamento;
 use App\Models\ItemAgendamento;
 use App\Models\HistoricoAgendamento;
+use App\Models\Profissional;
+use App\Models\ServicoProfissional;
+use App\Support\Telefone;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class AgendamentoService
 {
+    private const MSG_SERVICO_INDISPONIVEL = 'Este serviço não está mais disponível para agendamento. Atualize a página e tente novamente.';
+
     /**
      * Lista agendamentos do cliente autenticado.
      */
@@ -118,25 +123,48 @@ class AgendamentoService
 
     /**
      * Cria um agendamento validando disponibilidade antes de inserir.
+     *
+     * Preço, duração e nome do serviço são sempre derivados de servicos_profissionais/servicos
+     * (nunca do request). Com $profissionalId informado (fluxo do painel), o serviço precisa
+     * pertencer a esse profissional e as regras de agenda online não se aplicam.
+     *
+     * @param array $dados servico_profissional_id, cliente_id, data_hora_inicio, alterado_por_id
+     * @throws \RuntimeException com mensagem amigável se o serviço ou o horário estiver indisponível.
      */
-    public function criar(array $dados): Agendamento
+    public function criar(array $dados, ?int $profissionalId = null): Agendamento
     {
-        return DB::transaction(function () use ($dados) {
+        return DB::transaction(function () use ($dados, $profissionalId) {
+            $servicoProfissional = ServicoProfissional::with('servico')
+                ->find($dados['servico_profissional_id']);
+
+            if (!$servicoProfissional) {
+                throw new \RuntimeException(self::MSG_SERVICO_INDISPONIVEL);
+            }
+
+            // Trava a linha do profissional: serializa a criação de agendamentos por profissional
+            // (evita reserva dupla por condição de corrida) sem bloquear os demais.
+            $profissional = Profissional::with('estabelecimento')
+                ->whereKey($servicoProfissional->profissional_id)
+                ->lockForUpdate()
+                ->first();
+
+            $this->validarServicoAgendavel($servicoProfissional, $profissional, $profissionalId);
+
             $dataHoraInicio = Carbon::parse($dados['data_hora_inicio']);
-            $tempoMinutos   = (int) $dados['tempo_execucao_minutos'];
+            $tempoMinutos   = $servicoProfissional->tempo_execucao_minutos;
             $dataHoraFim    = $dataHoraInicio->copy()->addMinutes($tempoMinutos);
-            $preco          = (float) $dados['preco'];
+            $preco          = $servicoProfissional->preco;
 
             // Valida disponibilidade — lança RuntimeException se indisponível
             $this->verificarDisponibilidade(
-                $dados['profissional_id'],
+                $profissional->id,
                 $dataHoraInicio,
                 $dataHoraFim,
             );
 
             $agendamento = Agendamento::create([
                 'cliente_id'       => $dados['cliente_id'],
-                'profissional_id'  => $dados['profissional_id'],
+                'profissional_id'  => $profissional->id,
                 'data_hora_inicio' => $dataHoraInicio,
                 'data_hora_fim'    => $dataHoraFim,
                 'status'           => 'confirmado',
@@ -145,8 +173,8 @@ class AgendamentoService
 
             ItemAgendamento::create([
                 'agendamento_id'         => $agendamento->id,
-                'servico_id'             => $dados['servico_id'],
-                'nome_servico'           => $dados['nome_servico'],
+                'servico_id'             => $servicoProfissional->servico_id,
+                'nome_servico'           => $servicoProfissional->servico->nome,
                 'preco_praticado'        => $preco,
                 'tempo_execucao_minutos' => $tempoMinutos,
             ]);
@@ -155,11 +183,47 @@ class AgendamentoService
                 'agendamento_id'  => $agendamento->id,
                 'status_anterior' => 'pendente',
                 'status_novo'     => 'confirmado',
-                'alterado_por_id' => $dados['cliente_id'],
+                'alterado_por_id' => $dados['alterado_por_id'],
             ]);
 
             return $agendamento->load(['profissional.estabelecimento', 'itens']);
         });
+    }
+
+    /**
+     * Garante que o vínculo serviço/profissional pode receber agendamentos.
+     *
+     * @throws \RuntimeException
+     */
+    private function validarServicoAgendavel(
+        ServicoProfissional $servicoProfissional,
+        ?Profissional $profissional,
+        ?int $profissionalId,
+    ): void {
+        if (!$profissional || !$servicoProfissional->ativo || !$servicoProfissional->servico?->ativo) {
+            throw new \RuntimeException(self::MSG_SERVICO_INDISPONIVEL);
+        }
+
+        // Fluxo do painel: o profissional só agenda os próprios serviços
+        if ($profissionalId !== null) {
+            if ($profissional->id !== $profissionalId) {
+                throw new \RuntimeException(self::MSG_SERVICO_INDISPONIVEL);
+            }
+
+            return;
+        }
+
+        // Fluxo do cliente: respeita as configurações de agendamento online
+        $estabelecimento = $profissional->estabelecimento;
+
+        if (
+            !$profissional->aceita_agendamentos
+            || !$estabelecimento
+            || !$estabelecimento->ativo
+            || !$estabelecimento->agenda_online
+        ) {
+            throw new \RuntimeException(self::MSG_SERVICO_INDISPONIVEL);
+        }
     }
 
     /**
@@ -213,13 +277,14 @@ class AgendamentoService
         }
 
         if (!empty($filtros['cliente'])) {
-            $termo = $filtros['cliente'];
-            $query->whereHas('cliente', function ($q) use ($termo) {
+            $termo          = $filtros['cliente'];
+            $termoTelefone  = Telefone::normalizar($termo);
+            $query->whereHas('cliente', function ($q) use ($termo, $termoTelefone) {
                 $q->where('nome_completo', 'like', "%{$termo}%")
                   ->orWhere('email', 'like', "%{$termo}%")
-                  ->orWhereHas('perfil', function ($q2) use ($termo) {
-                      $q2->where('telefone', 'like', "%{$termo}%");
-                  });
+                  ->when($termoTelefone, fn ($q1) => $q1->orWhereHas('perfil', function ($q2) use ($termoTelefone) {
+                      $q2->where('telefone', 'like', "%{$termoTelefone}%");
+                  }));
             });
         }
 

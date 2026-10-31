@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Notifications\RedefinirSenhaNotification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -37,6 +38,14 @@ class User extends Authenticatable
             'password'          => 'hashed',
             'ativo'             => 'boolean',
         ];
+    }
+
+    /**
+     * E-mail de redefinição de senha em PT-BR (marca EstetiFlow).
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new RedefinirSenhaNotification($token));
     }
 
     // ── Relationships ──────────────────────────────────────────────────

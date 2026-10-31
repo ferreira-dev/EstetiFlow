@@ -19,7 +19,7 @@
 
 | Ordem | Arquivo | Escopo | Status |
 |-------|---------|--------|--------|
-| 1 | [seguranca-e-integridade.md](seguranca-e-integridade.md) | Bloqueadores: preço adulterável, vazamento entre tenants, sequestro de conta, reserva dupla, timezone, recuperação de senha | [ ] |
+| 1 | [seguranca-e-integridade.md](seguranca-e-integridade.md) | Bloqueadores: preço adulterável, vazamento entre tenants, sequestro de conta, reserva dupla, timezone, recuperação de senha | [x] |
 | 2 | [fluxo-de-reserva-ux.md](fluxo-de-reserva-ux.md) | Slots ocupados, login no meio da reserva, notificações, conteúdo falso, onboarding do profissional | [ ] |
 | 3 | [arquitetura-e-estado.md](arquitetura-e-estado.md) | Props expostas, status que não fecham, 1 profissional por estabelecimento, testes | [ ] |
 | 4 | [infra-e-lgpd.md](infra-e-lgpd.md) | Ambiente de produção, backups, monitoramento, seeder de roles, termos/privacidade | [ ] |
