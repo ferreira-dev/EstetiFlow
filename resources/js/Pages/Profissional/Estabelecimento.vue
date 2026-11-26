@@ -23,6 +23,57 @@
             </div>
         </div>
 
+        <!-- Link público salvo (o produto do profissional) -->
+        <CompartilharLink
+            v-if="!isFirstTime && estabelecimento?.url_personalizada"
+            :url="`${baseUrl}/agendar/${estabelecimento.url_personalizada}`"
+            :nome="estabelecimento.nome_fantasia"
+        />
+
+        <!-- ── FOTO DE CAPA (upload separado do formulário principal) ─────── -->
+        <div v-if="!isFirstTime" class="glass-card space-y-4 p-6">
+            <div>
+                <h3 class="text-sm font-semibold uppercase tracking-widest text-zinc-400">Foto de capa</h3>
+                <p class="mt-1 text-xs text-zinc-400">
+                    Aparece no topo da sua página pública. JPG, PNG ou WebP, até 2 MB, mínimo 600 × 300 px.
+                    Sem foto, a página usa a cor da marca com as iniciais do estabelecimento.
+                </p>
+            </div>
+
+            <div class="h-40 w-full overflow-hidden rounded-xl border border-white/10 sm:h-52">
+                <CapaEstabelecimento :estabelecimento="previaCapa" tamanho="lg" />
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+                <FileUpload
+                    mode="basic"
+                    name="capa"
+                    accept="image/jpeg,image/png,image/webp"
+                    :maxFileSize="2 * 1024 * 1024"
+                    :chooseLabel="estabelecimento?.foto_capa_url ? 'Trocar foto' : 'Enviar foto'"
+                    chooseIcon="pi pi-image"
+                    :disabled="enviandoCapa"
+                    customUpload
+                    auto
+                    :invalidFileSizeMessage="'A imagem deve ter no máximo 2 MB.'"
+                    :invalidFileTypeMessage="'Use uma imagem JPG, PNG ou WebP.'"
+                    @uploader="enviarCapa"
+                />
+                <Button
+                    v-if="estabelecimento?.foto_capa_url"
+                    label="Remover foto"
+                    icon="pi pi-trash"
+                    severity="danger"
+                    text
+                    type="button"
+                    :loading="removendoCapa"
+                    @click="removerCapa"
+                />
+                <i v-if="enviandoCapa" class="pi pi-spin pi-spinner text-zinc-400"></i>
+            </div>
+            <Message v-if="page.props.errors?.capa" severity="error" :closable="false">{{ page.props.errors.capa }}</Message>
+        </div>
+
         <form @submit.prevent="salvar" class="space-y-6">
 
             <!-- ── INFORMAÇÕES BÁSICAS ──────────────────────────────────── -->
@@ -163,6 +214,29 @@
                         autoResize
                     />
                     <Message v-if="form.errors.descricao" severity="error" :closable="false">{{ form.errors.descricao }}</Message>
+                </div>
+
+                <!-- Comodidades -->
+                <div class="space-y-3">
+                    <div>
+                        <p class="text-sm font-medium text-zinc-300">
+                            Comodidades <span class="text-zinc-500">(opcional)</span>
+                        </p>
+                        <p class="mt-0.5 text-xs text-zinc-400">Marque só o que o seu espaço realmente oferece — aparece na página pública.</p>
+                    </div>
+                    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        <label
+                            v-for="item in CARACTERISTICAS"
+                            :key="item.valor"
+                            :for="`car_${item.valor}`"
+                            class="flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-zinc-900/40 px-3 py-2 text-sm text-zinc-300 transition-colors hover:border-white/20"
+                        >
+                            <Checkbox v-model="form.caracteristicas" :inputId="`car_${item.valor}`" :value="item.valor" />
+                            <i :class="item.icone" class="text-xs text-zinc-400"></i>
+                            <span>{{ item.label }}</span>
+                        </label>
+                    </div>
+                    <Message v-if="form.errors.caracteristicas" severity="error" :closable="false">{{ form.errors.caracteristicas }}</Message>
                 </div>
 
                 <!-- Telefones -->
@@ -342,7 +416,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { useForm, usePage } from '@inertiajs/vue3'
+import { router, useForm, usePage } from '@inertiajs/vue3'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
@@ -353,9 +427,14 @@ import Message from 'primevue/message'
 import ToggleSwitch from 'primevue/toggleswitch'
 import SelectButton from 'primevue/selectbutton'
 import Tag from 'primevue/tag'
+import Checkbox from 'primevue/checkbox'
+import FileUpload from 'primevue/fileupload'
 import DashboardLayout from '@/Layouts/DashboardLayout.vue'
+import CapaEstabelecimento from '@/Components/Features/CapaEstabelecimento.vue'
+import CompartilharLink from '@/Components/Profissional/CompartilharLink.vue'
 import { useCorTema } from '@/Composables/useCorTema'
 import { CORES_TEMA, COR_PADRAO } from '@/Constants/coresTema'
+import { CARACTERISTICAS } from '@/Constants/caracteristicas'
 
 defineOptions({ layout: DashboardLayout })
 
@@ -372,6 +451,7 @@ const form = useForm({
     cor_primaria:        props.estabelecimento?.cor_primaria        ?? COR_PADRAO,
     cnpj:                props.estabelecimento?.cnpj                ?? '',
     descricao:           props.estabelecimento?.descricao           ?? '',
+    caracteristicas:     props.estabelecimento?.caracteristicas     ?? [],
     telefone_principal:  props.estabelecimento?.telefone_principal  ?? '',
     telefone_secundario: props.estabelecimento?.telefone_secundario ?? '',
     cep:                 props.estabelecimento?.cep                 ?? '',
@@ -439,6 +519,39 @@ async function buscarCep() {
 
 function salvar() {
     form.post('/profissional/estabelecimento')
+}
+
+// ── Foto de capa ──────────────────────────────────────────────────────────────
+const enviandoCapa  = ref(false)
+const removendoCapa = ref(false)
+
+// Prévia usa a cor selecionada no formulário (mesmo antes de salvar)
+const previaCapa = computed(() => ({
+    ...props.estabelecimento,
+    nome_fantasia: form.nome_fantasia || props.estabelecimento?.nome_fantasia,
+    cor_primaria:  form.cor_primaria,
+}))
+
+function enviarCapa(event) {
+    const arquivo = event.files?.[0]
+    if (!arquivo) return
+
+    enviandoCapa.value = true
+    router.post('/profissional/estabelecimento/capa', { capa: arquivo }, {
+        forceFormData:  true,
+        preserveScroll: true,
+        preserveState:  true,
+        onFinish: () => { enviandoCapa.value = false },
+    })
+}
+
+function removerCapa() {
+    removendoCapa.value = true
+    router.delete('/profissional/estabelecimento/capa', {
+        preserveScroll: true,
+        preserveState:  true,
+        onFinish: () => { removendoCapa.value = false },
+    })
 }
 
 // ── UFs do Brasil ─────────────────────────────────────────────────────────────

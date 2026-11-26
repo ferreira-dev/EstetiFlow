@@ -2,12 +2,7 @@
     <div class="glass-card overflow-hidden" style="min-width: 180px;">
         <!-- Imagem -->
         <div class="relative h-40 w-full overflow-hidden">
-            <img
-                :src="estabelecimento.foto_capa_url || 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=800'"
-                :alt="estabelecimento.nome_fantasia"
-                class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
-                loading="lazy"
-            />
+            <CapaEstabelecimento :estabelecimento="estabelecimento" lazy />
             <!-- Badge de cidade -->
             <Tag
                 v-if="estabelecimento.cidade"
@@ -43,6 +38,7 @@
 import { Link } from '@inertiajs/vue3'
 import Button from 'primevue/button'
 import Tag from 'primevue/tag'
+import CapaEstabelecimento from './CapaEstabelecimento.vue'
 
 defineProps({
     estabelecimento: {

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Support\RetornoReserva;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -15,9 +16,17 @@ class LoginController extends Controller
 {
     private const MAX_TENTATIVAS = 5;
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
-        return Inertia::render('Login');
+        // Login iniciado a partir de uma reserva: volta para a página do estabelecimento
+        $retorno = RetornoReserva::validar($request->query('redirect'));
+        if ($retorno) {
+            $request->session()->put('url.intended', url($retorno));
+        }
+
+        return Inertia::render('Login', [
+            'retornoReserva' => $retorno,
+        ]);
     }
 
     public function store(Request $request): RedirectResponse

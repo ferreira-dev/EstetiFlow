@@ -9,7 +9,13 @@ use App\Models\ItemAgendamento;
 use App\Models\HistoricoAgendamento;
 use App\Models\Profissional;
 use App\Models\ServicoProfissional;
+use App\Models\User;
+use App\Notifications\Agendamento\NovaReservaNotification;
+use App\Notifications\Agendamento\ReservaCanceladaPeloClienteNotification;
+use App\Notifications\Agendamento\ReservaCanceladaPeloProfissionalNotification;
+use App\Notifications\Agendamento\ReservaConfirmadaNotification;
 use App\Support\Telefone;
+use Illuminate\Notifications\Notification;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +23,9 @@ use Illuminate\Support\Facades\DB;
 class AgendamentoService
 {
     private const MSG_SERVICO_INDISPONIVEL = 'Este serviço não está mais disponível para agendamento. Atualize a página e tente novamente.';
+
+    /** Quantos dias à frente o cliente pode reservar pela página pública. */
+    public const JANELA_RESERVA_DIAS = 30;
 
     /**
      * Lista agendamentos do cliente autenticado.
@@ -111,7 +120,7 @@ class AgendamentoService
 
         // ── 4. Conflito com agendamento existente ─────────────────────────
         $conflito = Agendamento::where('profissional_id', $profissionalId)
-            ->whereIn('status', ['pendente', 'confirmado', 'em_atendimento'])
+            ->whereIn('status', Agendamento::STATUS_OCUPAM_AGENDA)
             ->where('data_hora_inicio', '<', $fim)
             ->where('data_hora_fim', '>', $inicio)
             ->exists();
@@ -133,7 +142,7 @@ class AgendamentoService
      */
     public function criar(array $dados, ?int $profissionalId = null): Agendamento
     {
-        return DB::transaction(function () use ($dados, $profissionalId) {
+        $agendamento = DB::transaction(function () use ($dados, $profissionalId) {
             $servicoProfissional = ServicoProfissional::with('servico')
                 ->find($dados['servico_profissional_id']);
 
@@ -154,6 +163,13 @@ class AgendamentoService
             $tempoMinutos   = $servicoProfissional->tempo_execucao_minutos;
             $dataHoraFim    = $dataHoraInicio->copy()->addMinutes($tempoMinutos);
             $preco          = $servicoProfissional->preco;
+
+            // Fluxo do cliente: limita a antecedência da reserva (o painel do profissional não tem limite)
+            if ($profissionalId === null && $dataHoraInicio->gt(now()->addDays(self::JANELA_RESERVA_DIAS)->endOfDay())) {
+                throw new \RuntimeException(
+                    'Reservas online podem ser feitas com até ' . self::JANELA_RESERVA_DIAS . ' dias de antecedência.'
+                );
+            }
 
             // Valida disponibilidade — lança RuntimeException se indisponível
             $this->verificarDisponibilidade(
@@ -188,6 +204,26 @@ class AgendamentoService
 
             return $agendamento->load(['profissional.estabelecimento', 'itens']);
         });
+
+        // E-mails só para reservas feitas pelo cliente na página pública
+        // (no painel o profissional avisa o cliente pelo botão de WhatsApp)
+        if ($profissionalId === null) {
+            $agendamento->load(['cliente', 'profissional.usuario']);
+            $this->notificar($agendamento->profissional->usuario, new NovaReservaNotification($agendamento));
+            $this->notificar($agendamento->cliente, new ReservaConfirmadaNotification($agendamento));
+        }
+
+        return $agendamento;
+    }
+
+    /**
+     * Envia o e-mail (via fila) apenas para usuários com e-mail — pré-cadastros não têm.
+     */
+    private function notificar(?User $destinatario, Notification $notificacao): void
+    {
+        if ($destinatario?->email) {
+            $destinatario->notify($notificacao);
+        }
     }
 
     /**
@@ -231,7 +267,7 @@ class AgendamentoService
      */
     public function cancelar(int $agendamentoId, int $usuarioId): bool
     {
-        return DB::transaction(function () use ($agendamentoId, $usuarioId) {
+        $agendamento = DB::transaction(function () use ($agendamentoId, $usuarioId) {
             $agendamento = Agendamento::where('id', $agendamentoId)
                 ->where('cliente_id', $usuarioId)
                 ->whereIn('status', ['pendente', 'confirmado'])
@@ -251,8 +287,13 @@ class AgendamentoService
                 'alterado_por_id' => $usuarioId,
             ]);
 
-            return true;
+            return $agendamento;
         });
+
+        $agendamento->load(['cliente', 'itens', 'profissional.usuario', 'profissional.estabelecimento']);
+        $this->notificar($agendamento->profissional?->usuario, new ReservaCanceladaPeloClienteNotification($agendamento));
+
+        return true;
     }
 
     // ── Painel do Profissional ─────────────────────────────────────────────
@@ -306,7 +347,7 @@ class AgendamentoService
      */
     public function alterarStatus(int $agendamentoId, int $profissionalId, string $novoStatus, int $userId): Agendamento
     {
-        return DB::transaction(function () use ($agendamentoId, $profissionalId, $novoStatus, $userId) {
+        $agendamento = DB::transaction(function () use ($agendamentoId, $profissionalId, $novoStatus, $userId) {
             $agendamento = Agendamento::where('id', $agendamentoId)
                 ->where('profissional_id', $profissionalId)
                 ->firstOrFail();
@@ -331,5 +372,13 @@ class AgendamentoService
 
             return $agendamento->refresh();
         });
+
+        // Cancelamento/recusa pelo profissional avisa o cliente
+        if ($novoStatus === 'cancelado_profissional') {
+            $agendamento->load(['cliente', 'itens', 'profissional.estabelecimento']);
+            $this->notificar($agendamento->cliente, new ReservaCanceladaPeloProfissionalNotification($agendamento));
+        }
+
+        return $agendamento;
     }
 }

@@ -120,6 +120,17 @@
 
                     <!-- Ações contextuais -->
                     <div class="flex flex-shrink-0 flex-wrap gap-2">
+                        <!-- Reserva ativa com telefone: confirmação pronta no WhatsApp -->
+                        <Button
+                            v-if="['pendente', 'confirmado'].includes(ag.status) && ag.cliente?.perfil?.telefone"
+                            v-tooltip.top="'Enviar confirmação no WhatsApp'"
+                            icon="pi pi-whatsapp"
+                            size="small"
+                            severity="success"
+                            outlined
+                            aria-label="Enviar confirmação no WhatsApp"
+                            @click="enviarConfirmacaoWhatsapp(ag)"
+                        />
                         <!-- pendente: confirmar | recusar -->
                         <template v-if="ag.status === 'pendente'">
                             <Button
@@ -305,6 +316,7 @@ const props = defineProps({
     servicos: { type: Array, default: () => [] },
     horariosFuncionamento: { type: Array, default: () => [] },
     bloqueios: { type: Array, default: () => [] },
+    estabelecimento: { type: Object, default: null },
 })
 
 const confirm = useConfirm()
@@ -345,6 +357,28 @@ async function enviarConviteCadastro(cliente) {
     } finally {
         gerandoConvite.value = false
     }
+}
+
+// ── Confirmação pelo WhatsApp (mensagem pronta) ─────────────────────────────
+function enviarConfirmacaoWhatsapp(ag) {
+    const nome     = (ag.cliente.nome_completo ?? '').split(' ')[0]
+    const servicos = (ag.itens ?? []).map(i => i.nome_servico).join(', ')
+    const local    = props.estabelecimento?.nome_fantasia ? ` no ${props.estabelecimento.nome_fantasia}` : ''
+
+    const linhas = [
+        `Olá, ${nome}! Sua reserva${local} está confirmada:`,
+        `• Serviço: ${servicos}`,
+        `• Data: ${formatarData(ag.data_hora_inicio)} às ${formatarHora(ag.data_hora_inicio)}`,
+    ]
+    if (props.estabelecimento?.endereco) linhas.push(`• Endereço: ${props.estabelecimento.endereco}`)
+    linhas.push('Até lá!')
+
+    const telefone = String(ag.cliente.perfil.telefone).replace(/\D/g, '')
+    const url = `https://wa.me/55${telefone}?text=${encodeURIComponent(linhas.join('\n'))}`
+
+    // Sem 'noopener' nas features: com ele o window.open sempre retorna null
+    const janela = window.open(url, '_blank')
+    if (janela) janela.opener = null
 }
 
 function formatarAno(data) {

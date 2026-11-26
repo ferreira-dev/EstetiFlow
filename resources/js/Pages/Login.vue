@@ -12,7 +12,9 @@
         <div class="glass-card p-8">
             <div class="mb-6 text-center">
                 <h1 class="text-2xl font-bold text-white">Bem-vindo de volta!</h1>
-                <p class="mt-2 text-sm text-zinc-400">Faça login para gerenciar seus agendamentos</p>
+                <p class="mt-2 text-sm text-zinc-400">
+                    {{ retornoReserva ? 'Entre para concluir sua reserva' : 'Faça login para gerenciar seus agendamentos' }}
+                </p>
             </div>
 
             <form @submit.prevent="handleLogin" class="space-y-5">
@@ -74,7 +76,7 @@
             <div class="text-center">
                 <p class="text-sm text-zinc-400">
                     Não tem uma conta?
-                    <Link href="/registro" class="font-semibold transition-colors hover:text-white" style="color: var(--p-primary-color)">
+                    <Link :href="linkRegistro" class="font-semibold transition-colors hover:text-white" style="color: var(--p-primary-color)">
                         Cadastre-se
                     </Link>
                 </p>
@@ -92,6 +94,7 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
@@ -103,6 +106,15 @@ import Message from 'primevue/message'
 import AuthLayout from '@/Layouts/AuthLayout.vue'
 
 defineOptions({ layout: AuthLayout })
+
+const props = defineProps({
+    // Caminho da página de reserva para onde o usuário volta após entrar (validado no backend)
+    retornoReserva: { type: String, default: null },
+})
+
+const linkRegistro = computed(() =>
+    props.retornoReserva ? `/registro?redirect=${encodeURIComponent(props.retornoReserva)}` : '/registro'
+)
 
 const form = useForm({
     email: '',

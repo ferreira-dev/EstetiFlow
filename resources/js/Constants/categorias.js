@@ -13,58 +13,63 @@ export const CATEGORIAS_SERVICO = [
     {
         id: 'barba',
         titulo: 'Barba',
-        icone: 'pi pi-sparkles',
+        icone: 'pi pi-user',
         descricao: 'Aparar, modelar e hidratar barba'
     },
     {
         id: 'manicure',
         titulo: 'Manicure',
-        icone: 'pi pi-sparkles',
+        icone: 'pi pi-star',
         descricao: 'Unhas das mãos, esmaltação e nail art'
     },
     {
         id: 'pedicure',
         titulo: 'Pedicure',
-        icone: 'pi pi-sparkles',
+        icone: 'pi pi-star-fill',
         descricao: 'Unhas dos pés, hidratação e cuidados'
     },
     {
         id: 'sobrancelha',
         titulo: 'Sobrancelha',
-        icone: 'pi pi-sparkles',
+        icone: 'pi pi-eye',
         descricao: 'Design, micropigmentação e manutenção'
     },
     {
         id: 'maquiagem',
         titulo: 'Maquiagem',
-        icone: 'pi pi-sparkles',
+        icone: 'pi pi-palette',
         descricao: 'Produção para eventos, dia a dia e editorial'
     },
     {
         id: 'depilacao',
         titulo: 'Depilação',
-        icone: 'pi pi-sparkles',
+        icone: 'pi pi-bolt',
         descricao: 'Cera, laser e métodos diversos'
     },
     {
         id: 'estetica',
         titulo: 'Estética',
-        icone: 'pi pi-sparkles',
+        icone: 'pi pi-face-smile',
         descricao: 'Limpeza de pele, peeling e tratamentos faciais'
     },
     {
         id: 'massagem',
         titulo: 'Massagem',
-        icone: 'pi pi-sparkles',
+        icone: 'pi pi-heart',
         descricao: 'Relaxante, modeladora e terapêutica'
     },
     {
         id: 'hidratacao',
         titulo: 'Hidratação',
-        icone: 'pi pi-sparkles',
+        icone: 'pi pi-sun',
         descricao: 'Tratamentos de hidratação capilar e corporal'
     }
 ]
+
+/** Ícone (PrimeIcons) da categoria do serviço, com fallback genérico. */
+export function iconeCategoria(categoria) {
+    return CATEGORIAS_SERVICO.find(c => c.id === categoria)?.icone ?? 'pi pi-tag'
+}
 
 /**
  * Horários disponíveis para agendamento (30min cada slot)

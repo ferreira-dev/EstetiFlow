@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Estabelecimento;
+use App\Services\AgendamentoService;
 use App\Services\EstabelecimentoService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -59,6 +60,9 @@ class EstabelecimentoController extends Controller
         return Inertia::render('EstabelecimentoDetail', [
             'estabelecimento' => $estabelecimento,
             'horariosFuncionamento' => $horariosFuncionamento,
+            'janelaReservaDias' => AgendamentoService::JANELA_RESERVA_DIAS,
+            // Incompleto (sem serviço/horário): página mostra aviso "em breve" + WhatsApp
+            'agendaDisponivel' => $estabelecimento->isPublicavel(),
         ]);
     }
 }

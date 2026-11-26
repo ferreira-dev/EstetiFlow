@@ -11,6 +11,9 @@ class Agendamento extends Model
 {
     use SoftDeletes;
 
+    /** Status que ocupam a agenda do profissional (bloqueiam o horário para novas reservas). */
+    public const STATUS_OCUPAM_AGENDA = ['pendente', 'confirmado', 'em_atendimento'];
+
     protected $fillable = [
         'cliente_id',
         'profissional_id',
