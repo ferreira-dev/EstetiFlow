@@ -55,6 +55,16 @@ class PaginaPublicaConteudoTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->where('estabelecimento.caracteristicas', ['wifi', 'pix']));
     }
 
+    public function test_pagina_publica_exibe_horario_de_funcionamento_dos_profissionais(): void
+    {
+        $this->get($this->cenario['estabelecimento']->url_publica)
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('horariosFuncionamento', 7)
+                ->where('horariosFuncionamento.0.dia_semana', 0)
+                ->whereNot('horariosFuncionamento.0.hora_inicio', null)
+            );
+    }
+
     public function test_comodidade_desconhecida_e_rejeitada(): void
     {
         $this->actingAs($this->cenario['usuario'])

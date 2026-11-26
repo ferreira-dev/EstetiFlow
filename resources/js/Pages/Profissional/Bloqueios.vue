@@ -162,8 +162,6 @@
                 <Button label="Salvar" icon="pi pi-check" :loading="salvando" :disabled="!formValido" @click="salvar" />
             </template>
         </Dialog>
-
-        <ConfirmDialog />
     </div>
 </template>
 
@@ -181,7 +179,6 @@ import InputMask from 'primevue/inputmask'
 import Select from 'primevue/select'
 import DatePicker from 'primevue/datepicker'
 import ToggleSwitch from 'primevue/toggleswitch'
-import ConfirmDialog from 'primevue/confirmdialog'
 import DashboardLayout from '@/Layouts/DashboardLayout.vue'
 
 defineOptions({ layout: DashboardLayout })

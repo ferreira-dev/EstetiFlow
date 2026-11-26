@@ -98,9 +98,6 @@
             :catalogoServicos="catalogoServicos"
             :editingServico="servicoEditando"
         />
-
-        <!-- ConfirmDialog p/ remoção -->
-        <ConfirmDialog />
     </div>
 </template>
 
@@ -110,7 +107,6 @@ import { router } from '@inertiajs/vue3'
 import { useConfirm } from 'primevue/useconfirm'
 import Button from 'primevue/button'
 import Tag from 'primevue/tag'
-import ConfirmDialog from 'primevue/confirmdialog'
 import DashboardLayout from '@/Layouts/DashboardLayout.vue'
 import ServicoFormDialog from '@/Components/Profissional/ServicoFormDialog.vue'
 import { CATEGORIAS_SERVICO } from '@/Constants/categorias'

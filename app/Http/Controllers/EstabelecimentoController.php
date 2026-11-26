@@ -48,7 +48,7 @@ class EstabelecimentoController extends Controller
     {
         // Agrega horários de todos os profissionais (união por dia da semana)
         $horariosFuncionamento = collect($estabelecimento->profissionais)
-            ->flatMap(fn ($p) => $p->horarios_funcionamento ?? collect())
+            ->flatMap(fn ($p) => $p->horariosFuncionamento ?? collect())
             ->groupBy(fn ($h) => $h->dia_semana)
             ->map(fn ($grupo, $dia) => [
                 'dia_semana' => (int) $dia,

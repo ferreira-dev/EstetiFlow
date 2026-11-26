@@ -221,8 +221,6 @@
             </p>
         </div>
 
-        <ConfirmDialog />
-
         <!-- Popover de Contato do Cliente -->
         <Popover ref="op">
             <div class="flex flex-col gap-4 p-2 w-[280px]" v-if="selectedAgendamento?.cliente">
@@ -299,7 +297,6 @@ import { useToast } from 'primevue/usetoast'
 import axios from 'axios'
 import Button from 'primevue/button'
 import Tag from 'primevue/tag'
-import ConfirmDialog from 'primevue/confirmdialog'
 import Popover from 'primevue/popover'
 import InputText from 'primevue/inputtext'
 import DatePicker from 'primevue/datepicker'
