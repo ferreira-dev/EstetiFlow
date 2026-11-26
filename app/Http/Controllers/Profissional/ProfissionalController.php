@@ -59,6 +59,7 @@ class ProfissionalController extends Controller
                 Rule::unique('estabelecimentos', 'url_personalizada')->ignore($estabelecimentoAtual?->id),
             ],
             'agenda_online'      => ['required', 'boolean'],
+            'cor_primaria'       => ['required', Rule::in(Estabelecimento::CORES_PRIMARIAS)],
             'cnpj' => ['nullable', 'string', 'max:14'],
             'descricao' => ['nullable', 'string'],
             'telefone_principal' => ['required', 'string', 'max:20'],

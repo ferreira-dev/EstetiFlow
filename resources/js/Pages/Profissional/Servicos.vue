@@ -25,7 +25,7 @@
         <div v-if="servicos.length === 0" class="glass-card p-8 text-center lg:p-12">
             <div
                 class="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full"
-                style="background: linear-gradient(135deg, rgba(var(--p-primary-500), 0.2), rgba(var(--p-primary-500), 0.1))"
+                style="background: linear-gradient(135deg, color-mix(in srgb, var(--p-primary-500) 20%, transparent), color-mix(in srgb, var(--p-primary-500) 10%, transparent))"
             >
                 <i class="pi pi-list text-4xl" style="color: var(--p-primary-color)"></i>
             </div>

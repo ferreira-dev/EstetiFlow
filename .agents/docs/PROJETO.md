@@ -27,6 +27,7 @@ barbearias, salões de beleza, cabeleireiros, manicure/pedicure, design de sobra
 - ✅ Gestão de bloqueios (folgas pontuais + recorrentes)
 - ✅ Visualizar e gerenciar agendamentos (confirmar/recusar/iniciar/concluir/cancelar)
 - ✅ Editar dados do estabelecimento
+- ✅ Escolher a cor da marca do estabelecimento (página pública + painel)
 
 **Para Clientes:**
 - ✅ Buscar estabelecimentos (nome/categoria)
@@ -50,7 +51,7 @@ barbearias, salões de beleza, cabeleireiros, manicure/pedicure, design de sobra
 
 | Camada | Tecnologia |
 |--------|------------|
-| **Frontend** | Vue 3 (Composition API) + Inertia.js + PrimeVue 4.2 (Aura) + Tailwind CSS 3.x |
+| **Frontend** | Vue 3 (Composition API) + Inertia.js + PrimeVue 4.5 (Aura via `@primeuix/themes` 2.x) + Tailwind CSS 3.x |
 | **Backend** | Laravel 11 (monolito com Inertia) |
 | **Banco** | MySQL 8.0 — 14 tabelas, 5 módulos |
 | **Auth** | Sessão Laravel (`Auth::attempt`) + Spatie Permission (3 roles) |
@@ -116,7 +117,8 @@ resources/
 │   │   ├── Features/              # AgendamentoCard, ServicoItem, etc.
 │   │   ├── Layout/                # AppHeader, AppFooter, AppSidebar
 │   │   └── Profissional/          # ServicoFormDialog
-│   ├── Constants/                 # categorias.js
+│   ├── Composables/               # useAuth.js, useCorTema.js
+│   ├── Constants/                 # categorias.js, coresTema.js
 │   ├── Layouts/                   # DefaultLayout, AuthLayout, DashboardLayout
 │   ├── Pages/
 │   │   ├── Home.vue, Login.vue, Registro.vue, Estabelecimentos.vue
@@ -212,10 +214,23 @@ class AgendamentoService
 
 ### Autenticação
 
-1. POST `/login` → `Auth::attempt()` → sessão Laravel
+1. POST `/login` → `Auth::attempt()` (apenas `ativo = 1`) → sessão Laravel. Throttle de 5 tentativas/min por e-mail+IP (`RateLimiter`) + `throttle:20,1` por IP na rota
 2. `HandleInertiaRequests::share()` → expõe `auth.user` + `auth.roles` globalmente
 3. Rotas protegidas → middleware `auth` (cliente + profissional) ou `auth` + `role:profissional`
 4. Frontend → `usePage().props.auth?.user` (null se não autenticado)
+5. **Esqueci minha senha:** `/esqueci-senha` → broker nativo (`Password::sendResetLink`) → e-mail PT-BR (`RedefinirSenhaNotification`) → `/redefinir-senha/{token}`. Resposta sempre neutra; inativos não recebem link
+6. **Pré-cadastro (cliente sem e-mail/senha criado pelo profissional):** só vira conta com login pelo link gerado no painel (popover do cliente em Agendamentos → "Enviar link de cadastro" via WhatsApp). Token aleatório com hash em `convites_cadastro`, 48h, uso único. Registro/login públicos **nunca** dão acesso a um pré-cadastro (registro com o mesmo telefone cria conta nova)
+
+### Fuso horário e idioma
+
+- Fixo `America/Sao_Paulo` + `pt_BR` (`APP_TIMEZONE`, `APP_LOCALE`). O front envia hora local (`yyyy-MM-dd HH:mm:ss`) e o backend a interpreta no mesmo fuso
+- A sessão MySQL usa o offset do fuso da aplicação (`config/database.php` → `timezone`)
+- Traduções em `lang/pt_BR` (validation, auth, passwords, pagination)
+
+### Testes
+
+- `php artisan test` (dentro do container `php-fpm`) usa o banco **`schedule_saas_testing`** (definido no `phpunit.xml`, com `RefreshDatabase`). `tests/TestCase.php` aborta se o banco não terminar em `_testing`
+- Cenário compartilhado: `tests/Concerns/CriaCenarioAgendamento.php`
 
 ---
 
@@ -265,7 +280,9 @@ class AgendamentoService
 
 | Funcionalidade | Implementação | Observação |
 |---------------|---------------|------------|
-| **Criar agendamento** | `POST /agendamentos` | Status vai direto para `confirmado`, pulando `pendente` intencionalmente no MVP |
+| **Criar agendamento** | `POST /agendamentos` | Status vai direto para `confirmado`, pulando `pendente` intencionalmente no MVP. Payload: só `servico_profissional_id` + `data_hora_inicio` (`CriarAgendamentoRequest`) |
+| **Integridade na criação** | `AgendamentoService::criar()` | Preço/duração/nome derivados de `servicos_profissionais`; valida vínculo/serviço ativos; fluxo do cliente exige `aceita_agendamentos`, estabelecimento ativo e `agenda_online`; painel (`POST /profissional/agendamentos`) aceita só serviços do próprio profissional, mesmo com agenda online desligada. `lockForUpdate` na linha do profissional evita reserva dupla |
+| **Busca de clientes (painel)** | `GET /profissional/agendamentos/buscar-cliente` | Busca parcial só na carteira do profissional; fora dela só match exato de e-mail/telefone com dados mascarados (LGPD). `throttle:30,1` |
 | **Cancelar pelo cliente** | `DELETE /agendamentos/{id}` | Grava `cancelado_cliente` + `HistoricoAgendamento` |
 | **Snapshot de preço** | `ItemAgendamento` | `nome_servico`, `preco_praticado` e `tempo_execucao_minutos` preservados no momento do agendamento |
 | **Auditoria de status** | `HistoricoAgendamento` | Cada mudança de status grava `status_anterior`, `status_novo`, `alterado_por_id` |
@@ -382,6 +399,7 @@ agendamentos.profissional_id
 | **Dashboard do profissional** | `Profissional/Dashboard.vue`, `DashboardController.php` | ✅ |
 | **Painel financeiro** | `Profissional/Financeiro.vue`, `FinanceiroController.php` | ✅ |
 | **Página de perfil + alterar senha** | `Perfil.vue`, `PerfilController.php` | ✅ |
+| **Cor da marca por estabelecimento** | `Profissional/Estabelecimento.vue`, `useCorTema.js`, `coresTema.js` | ✅ |
 | DashboardLayout (7 itens no menu) | `DashboardLayout.vue` | ✅ |
 | Menu condicional "Painel Profissional" | `AppHeader.vue`, `AppSidebar.vue` | ✅ |
 | Categorias de serviço | `categorias.js`, `CategoriaItem.vue` | ✅ |
@@ -395,7 +413,6 @@ agendamentos.profissional_id
 |---------------|------------|
 | **Seleção de profissional no agendamento** | Cliente escolhe serviço mas não seleciona profissional explicitamente. `ServicoItem.vue` já recebe `horarios_funcionamento` e `bloqueios`, mas a seleção guiada falta. |
 | **Status detalhado no card do cliente** | `AgendamentoCard.vue` usa status simplificado. Falta exibir todos os 7 status com ícones e cores corretos. |
-| **Snapshot de preço (garantia)** | Agendamentos criam itens com snapshot, mas deve ser auditado em todos os fluxos. |
 | **Geolocalização** | Colunas `latitude`/`longitude` existem em `estabelecimentos`. Falta busca por proximidade no frontend/backend. |
 
 ### ❌ Não implementado — Criar do zero
@@ -430,11 +447,12 @@ agendamentos.profissional_id
 - Página de perfil (editar dados pessoais e senha)
 - DashboardLayout com menu lateral (7 itens)
 - 6 containers Docker (webserver, php-fpm, node, mysql, redis, mailhog)
+- Cor da marca por estabelecimento (tema primário dinâmico do Aura) — ver seção 9
+- Task 1 de prontidão (segurança e integridade): snapshot de preço garantido no backend, busca de clientes isolada por carteira, convite de cadastro com token seguro, lock contra reserva dupla, fuso/idioma BR, recuperação de senha e throttle de login
 
 ### Fase Atual: Polimento do Fluxo do Cliente
 1. Aprimorar seleção de profissional no fluxo de agendamento público (Step 0 no Drawer)
 2. Atualizar `AgendamentoCard.vue` do cliente para todos os 7 status
-3. Garantir snapshot de preço em todos os fluxos
 
 ### Próxima Fase: Geolocalização e Automações
 1. Busca por proximidade usando lat/lng de `estabelecimentos`
@@ -465,10 +483,82 @@ agendamentos.profissional_id
 | Mock de dados | Seeders Laravel | Dados no banco real em vez de JSON Server |
 | Serviços | Catálogo global + criação pelo profissional | Abordagem híbrida: selecionar existente OU criar novo |
 | Referência visual | Projeto React BarberLab | Figma com acesso protegido (403) |
+| Cor por estabelecimento | `updatePrimaryPalette` (global) + restauração no unmount | Escopo via CSS vars num wrapper não funciona: tokens derivados são resolvidos no `:root` e overlays são teleportados para o `body` |
+| Ponte Tailwind ↔ PrimeVue | `colors.primary` no `tailwind.config.js` via `color-mix` | Sem dependência nova; suporta opacidade (`/20`) |
 
 ---
 
-## 9. Referências
+## 9. Cor da Marca por Estabelecimento
+
+O dono do estabelecimento escolhe a **cor primária** do tema Aura em `/profissional/estabelecimento` (bloco "Cor da marca"). A cor é salva no banco e aplicada:
+
+- na **página pública** `/agendar/{url_personalizada}` (`EstabelecimentoDetail.vue`), incluindo o Drawer/Dialog de agendamento do `ServicoItem.vue`;
+- em **todo o painel do profissional** (`DashboardLayout.vue`).
+
+Home, listagem de estabelecimentos e telas de Auth permanecem com o padrão `emerald`.
+
+### 9.1 Como funciona
+
+```
+estabelecimentos.cor_primaria ('pink', 'blue', ...)
+        │
+        ├── Página pública: props.estabelecimento.cor_primaria ──┐
+        └── Painel: shared prop `corTema` (HandleInertiaRequests) ┤
+                                                                  ▼
+                              useCorTema() → aplicarCorTema(nome)
+                                                                  ▼
+                updatePrimaryPalette({ 50: '{pink.50}', …, 950: '{pink.950}' })
+                                                                  ▼
+       Componentes PrimeVue + var(--p-primary-*) + classes Tailwind primary-*
+```
+
+| Peça | Arquivo | Responsabilidade |
+|------|---------|------------------|
+| Coluna | Migration `2026_10_02_000001_add_cor_primaria_to_estabelecimentos_table` | `varchar(20)`, default `'emerald'` |
+| Paletas permitidas (backend) | `Estabelecimento::CORES_PRIMARIAS` | Validação `Rule::in(...)` em `ProfissionalController::salvarEstabelecimento` |
+| Paletas permitidas (frontend) | `resources/js/Constants/coresTema.js` | `CORES_TEMA` (valor + label PT-BR) e `COR_PADRAO`. **Manter em sincronia com o PHP** |
+| Prop compartilhada | `HandleInertiaRequests::share()` → `corTema` | Cor do estabelecimento do profissional logado (lazy) |
+| Aplicação do tema | `resources/js/Composables/useCorTema.js` | `aplicarCorTema()` troca a paleta global; `useCorTema()` aplica no setup (evita flash) e **restaura no `onUnmounted`** |
+| Seletor + prévia | `Pages/Profissional/Estabelecimento.vue` | `SelectButton` com swatches `var(--p-{cor}-400)`; prévia ao vivo no painel, revertida para a cor salva ao sair sem salvar |
+
+**Por que restaurar no unmount:** os layouts do Inertia são persistentes e `updatePrimaryPalette` é global. Sem restaurar, a cor de um estabelecimento vazaria para a Home/listagem ou para outro estabelecimento visitado em seguida.
+
+**Paleta curada (14 cores):** emerald, green, teal, cyan, sky, blue, indigo, violet, purple, fuchsia, pink, rose, orange, amber. Ficam de fora: `red` (confunde com `severity="danger"`), neutros `slate/zinc/gray/stone/neutral` (somem sobre a superfície zinc) e `yellow/lime` (brilho excessivo no dark e conflito com as estrelas de avaliação).
+
+**Dark mode:** o app é sempre dark e, no dark, o Aura usa o tom **400** como `primary.color`. Ex.: "azul" aparece como azul médio — intencional, para manter contraste.
+
+### 9.2 O que foi necessário para funcionar
+
+1. **Alinhar o motor de tema do PrimeVue (causa raiz).** `primevue` 4.2.5 usava `@primeuix/styled` 0.3.2, enquanto o Aura vinha de `@primevue/themes` 4.5.4 (deprecated) com `@primeuix/styled` 0.7.4. Com duas instâncias do motor, `updatePrimaryPalette` não chegava aos componentes (sem erro no console).
+   ```bash
+   docker compose exec node sh
+   npm i primevue@^4.5 @primeuix/themes@^2.0.3
+   npm uninstall @primevue/themes
+   npm ls @primeuix/styled   # deve listar UMA única versão (0.7.4)
+   ```
+   - `resources/js/app.js`: `import Aura from '@primeuix/themes/aura'`.
+   - ⚠️ **Não usar `@primeuix/themes` 3.x** com PrimeVue 4.5: ele traz `@primeuix/styled` 1.0 e recria o mesmo conflito.
+2. **Ponte Tailwind ↔ PrimeVue.** As classes `text-primary-400`, `bg-primary-500/20` etc. não geravam CSS. Foi adicionado `theme.extend.colors.primary` em `tailwind.config.js`, mapeando cada tom para `color-mix(in srgb, var(--p-primary-N) calc(<alpha-value> * 100%), transparent)`.
+3. **CSS inválido corrigido.** `rgba(var(--p-primary-500), x)` é descartado pelo navegador (o token é hex, não tripla RGB). Substituído por `color-mix(in srgb, var(--p-primary-500) X%, transparent)` em `app.css` e nas páginas/componentes. O gradiente `.text-gradient` com violeta fixo (`#a78bfa`) passou a usar `var(--p-primary-300)`.
+4. **Banco.** Rodar a migration (e opcionalmente o seed, que já atribui cores diferentes aos estabelecimentos de exemplo):
+   ```bash
+   docker compose exec php-fpm php artisan migrate
+   # ou: php artisan migrate:fresh --seed
+   ```
+5. **Reiniciar o Vite dev server após mudar dependências.** Enquanto `npm run dev` roda, existe `public/hot` e o Laravel serve os assets pelo Vite (porta 5173), **ignorando o `npm run build`**. O cache `node_modules/.vite/deps` havia sido gerado com o PrimeVue antigo, mantendo o conflito no navegador. Solução:
+   ```bash
+   docker compose restart node   # o Vite detecta o lockfile alterado e re-otimiza as deps
+   ```
+   Depois, recarregar o navegador com Ctrl+Shift+R.
+
+### 9.3 Como adicionar/remover uma cor
+
+1. Incluir o nome da paleta do Aura em `Estabelecimento::CORES_PRIMARIAS` **e** em `CORES_TEMA` (`coresTema.js`), na mesma ordem.
+2. Nenhuma migration é necessária (a coluna é `varchar`). Ao remover uma cor, valores antigos no banco caem automaticamente em `COR_PADRAO` no frontend.
+
+---
+
+## 10. Referências
 
 | Documento | Caminho | Conteúdo |
 |-----------|---------|----------|
@@ -476,3 +566,4 @@ agendamentos.profissional_id
 | **Arquitetura de Banco** | `.agents/skills/database-architect/SKILL.md` | Metodologia de modelagem MySQL/MariaDB (skill comportamental) |
 | **Guia PrimeVue 4** | `.agents/rules/primevue4-guide.txt` | Dicas específicas para componentes PrimeVue |
 | **Padrões do Projeto** | `.agents/rules/project-standards.md` | Rules de código, segurança e automação |
+| **Tasks de prontidão do MVP** | `.agents/tasks/README.md` | Índice, protocolo de execução por agentes e tasks pendentes para ir a produção |

@@ -95,10 +95,9 @@
                                 <ServicoItem
                                     v-for="sp in prof.servicos_profissionais"
                                     :key="sp.id"
-                                    :servico="{ ...sp.servico, preco: sp.preco, tempo_execucao_minutos: sp.tempo_execucao_minutos }"
+                                    :servico="{ ...sp.servico, servico_profissional_id: sp.id, preco: sp.preco, tempo_execucao_minutos: sp.tempo_execucao_minutos }"
                                     :nome-estabelecimento="estabelecimento.nome_fantasia"
                                     :estabelecimento-id="estabelecimento.id"
-                                    :profissional-id="prof.id"
                                     :horarios-funcionamento="prof.horarios_funcionamento ?? []"
                                     :bloqueios="prof.bloqueios_agenda ?? []"
                                     :agenda-online="estabelecimento.agenda_online"
@@ -172,7 +171,7 @@
                     </div>
 
                     <!-- CTA -->
-                    <div class="glass-card p-6 text-center" style="border-color: rgba(var(--p-primary-500), 0.2)">
+                    <div class="glass-card p-6 text-center" style="border-color: color-mix(in srgb, var(--p-primary-500) 20%, transparent)">
                         <h3 class="mb-2 flex items-center justify-center gap-2 text-lg font-semibold text-white">
                             <CalendarDays class="h-5 w-5" />
                             Pronto para agendar?
@@ -201,6 +200,7 @@ import Tag from 'primevue/tag'
 import ServicoItem from '@/Components/Features/ServicoItem.vue'
 import TelefoneItem from '@/Components/Features/TelefoneItem.vue'
 import DefaultLayout from '@/Layouts/DefaultLayout.vue'
+import { useCorTema } from '@/Composables/useCorTema'
 
 defineOptions({ layout: DefaultLayout })
 
@@ -208,6 +208,9 @@ const props = defineProps({
     estabelecimento:       { type: Object, default: null },
     horariosFuncionamento: { type: Array,  default: () => [] },
 })
+
+// Aplica a cor da marca escolhida pelo dono; volta ao padrão ao sair da página
+useCorTema(() => props.estabelecimento?.cor_primaria)
 
 const servicos = computed(() => {
     if (!props.estabelecimento?.profissionais) return []

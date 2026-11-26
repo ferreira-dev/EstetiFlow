@@ -16,10 +16,12 @@ services:
         volumes:
             - '.:/application'
         environment:
-            - MYSQL_ROOT_PASSWORD=@rootmf102030
-            - MYSQL_DATABASE=schedule_saas
-            - MYSQL_USER=laravel
-            - MYSQL_PASSWORD=User@102030
+            MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
+            MYSQL_ROOT_HOST: '%'
+            MYSQL_DATABASE: '${DB_DATABASE}'
+            MYSQL_USER: '${DB_USERNAME}'
+            MYSQL_PASSWORD: '${DB_PASSWORD}'
+            MYSQL_ALLOW_EMPTY_PASSWORD: 1
         ports:
             - '33002:3306'
 

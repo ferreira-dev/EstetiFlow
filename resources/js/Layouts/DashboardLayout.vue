@@ -90,9 +90,13 @@ import { Link, router, usePage } from '@inertiajs/vue3'
 import { useToast } from 'primevue/usetoast'
 import Toast from 'primevue/toast'
 import ConfirmDialog from 'primevue/confirmdialog'
+import { useCorTema } from '@/Composables/useCorTema'
 
 const page = usePage()
 const toast = useToast()
+
+// Painel usa a cor da marca do estabelecimento do profissional; volta ao padrão ao sair
+useCorTema(() => page.props.corTema)
 
 const user = computed(() => page.props.auth?.user)
 
@@ -151,7 +155,7 @@ watch(
 }
 
 .text-gradient {
-    background: linear-gradient(135deg, var(--p-primary-color) 0%, #a78bfa 100%);
+    background: linear-gradient(135deg, var(--p-primary-color) 0%, var(--p-primary-300) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;

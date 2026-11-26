@@ -16,7 +16,7 @@ description: Documentação completa e autoritativa do schema de banco de dados 
 - **SGBD:** MySQL 8.0 / MariaDB
 - **Charset:** UTF8MB4
 - **Engine:** InnoDB
-- **Total de tabelas:** 14
+- **Total de tabelas:** 15
 - **Módulos:** 5 (Autenticação, Estabelecimentos, Agenda, Financeiro, Engajamento)
 - **Nomenclatura:** `snake_case`, plural, PT-BR
 
@@ -25,7 +25,7 @@ description: Documentação completa e autoritativa do schema de banco de dados 
 ## 📦 Módulos e Tabelas
 
 ```
-Módulo de Autenticação      → usuarios, perfis
+Módulo de Autenticação      → usuarios, perfis, convites_cadastro
 Módulo de Estabelecimentos  → estabelecimentos, profissionais, servicos, servicos_profissionais
 Módulo de Agenda            → horarios_funcionamento, bloqueios_agenda, agendamentos,
                               itens_agendamentos, historico_agendamentos
@@ -50,6 +50,7 @@ Módulo de Engajamento       → avaliacoes, notificacoes
 1 agendamentos          : N historico_agendamentos
 1 agendamentos          : N avaliacoes
 1 usuarios              : N notificacoes
+1 usuarios              : N convites_cadastro
 ```
 
 ---
@@ -86,6 +87,7 @@ Módulo de Engajamento       → avaliacoes, notificacoes
     "data_nascimento": "date null",
     "genero": "enum('masculino', 'feminino', 'outro', 'prefiro_nao_informar') null",
     "telefone": "varchar(20) null",
+    "_telefone_nota": "Gravado apenas com dígitos (mutator em Perfil / App\\Support\\Telefone). Registros antigos: php artisan telefones:normalizar.",
     "cep": "char(8) null",
     "logradouro": "varchar(200) null",
     "numero": "varchar(10) null",
@@ -99,6 +101,23 @@ Módulo de Engajamento       → avaliacoes, notificacoes
     "updated_at": "timestamp default current_timestamp on update current_timestamp",
     "_relacionamentos": [
       "1 perfis : 1 usuarios (usuario_id)"
+    ]
+  },
+
+  "convites_cadastro": {
+    "_descricao": "Links de 'completar cadastro' gerados pelo profissional para clientes pré-cadastrados (sem e-mail/senha). Só o hash do token é armazenado; o link expira em 48h, é de uso único e gerar um novo revoga o anterior.",
+    "id": "bigint unsigned not null primary key auto_increment",
+    "usuario_id": "bigint unsigned not null",
+    "criado_por_id": "bigint unsigned null",
+    "token_hash": "char(64) not null unique",
+    "_token_hash_nota": "sha256 do token aleatório (Str::random(64)) enviado na URL /completar-cadastro/{token}.",
+    "expira_em": "timestamp not null",
+    "usado_em": "timestamp null",
+    "created_at": "timestamp default current_timestamp",
+    "updated_at": "timestamp default current_timestamp on update current_timestamp",
+    "_relacionamentos": [
+      "N convites_cadastro : 1 usuarios (usuario_id) — cliente pré-cadastrado",
+      "N convites_cadastro : 1 usuarios (criado_por_id) — profissional que gerou o link"
     ]
   }
 }
@@ -117,6 +136,8 @@ Módulo de Engajamento       → avaliacoes, notificacoes
     "url_personalizada": "varchar(160) not null unique",
     "agenda_online": "tinyint(1) not null default 1",
     "_agenda_online_nota": "Flag que controla se o agendamento online está habilitado. Quando 0 (false), o botão 'Reservar' na página do estabelecimento redireciona para o WhatsApp (wa.me/55{telefone_principal}) em vez de abrir o modal de agendamento.",
+    "cor_primaria": "varchar(20) not null default 'emerald'",
+    "_cor_primaria_nota": "Nome da paleta primária do tema Aura (PrimeVue) escolhida pelo dono. Valores permitidos em Estabelecimento::CORES_PRIMARIAS (espelhado em resources/js/Constants/coresTema.js). Aplicada via updatePrimaryPalette na página pública (/agendar/{url}) e no painel profissional.",
     "cnpj": "char(14) null unique",
     "descricao": "text null",
     "foto_capa_url": "varchar(500) null",

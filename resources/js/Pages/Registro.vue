@@ -214,7 +214,7 @@ function handleRegistro() {
 
 <style scoped>
 .text-gradient {
-    background: linear-gradient(135deg, var(--p-primary-color) 0%, #a78bfa 100%);
+    background: linear-gradient(135deg, var(--p-primary-color) 0%, var(--p-primary-300) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;

@@ -7,11 +7,11 @@
     },
     "dependencies": {
         "@inertiajs/vue3": "^2.0.0",
-        "@primevue/themes": "^4.0.0",
+        "@primeuix/themes": "^2.0.3",
         "date-fns": "^3.6.0",
         "lucide-vue-next": "^0.300.0",
         "primeicons": "^7.0.0",
-        "primevue": "4.2.5",
+        "primevue": "^4.5.5",
         "vue": "^3.4.0"
     },
     "devDependencies": {

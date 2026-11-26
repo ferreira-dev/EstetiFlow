@@ -57,6 +57,9 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
+            // Sessão MySQL no mesmo fuso da aplicação (NOW()/CURRENT_TIMESTAMP coerentes com now() do PHP).
+            // Usa o offset (ex.: -03:00) porque a imagem mysql não carrega as tabelas de fusos nomeados.
+            'timezone' => env('DB_TIMEZONE', (new DateTime('now', new DateTimeZone(env('APP_TIMEZONE', 'America/Sao_Paulo'))))->format('P')),
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],

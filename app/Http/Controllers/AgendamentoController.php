@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CriarAgendamentoRequest;
 use App\Services\AgendamentoService;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
@@ -23,20 +24,12 @@ class AgendamentoController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(CriarAgendamentoRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'profissional_id'        => ['required', 'exists:profissionais,id'],
-            'servico_id'             => ['required', 'exists:servicos,id'],
-            'data_hora_inicio'       => ['required', 'date', 'after:now'],
-            'preco'                  => ['required', 'numeric', 'min:0'],
-            'tempo_execucao_minutos' => ['required', 'integer', 'min:1'],
-            'nome_servico'           => ['required', 'string', 'max:150'],
-        ]);
-
         try {
-            $this->service->criar(array_merge($validated, [
-                'cliente_id' => $request->user()->id,
+            $this->service->criar(array_merge($request->validated(), [
+                'cliente_id'      => $request->user()->id,
+                'alterado_por_id' => $request->user()->id,
             ]));
         } catch (\RuntimeException $e) {
             return back()->withErrors(['data_hora_inicio' => $e->getMessage()]);

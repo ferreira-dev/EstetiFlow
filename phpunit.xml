@@ -19,6 +19,13 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <env name="APP_TIMEZONE" value="America/Sao_Paulo"/>
+        <env name="APP_LOCALE" value="pt_BR"/>
+        <!-- Banco exclusivo de testes (RefreshDatabase) — nunca o banco de dev -->
+        <env name="DB_DATABASE" value="schedule_saas_testing"/>
+        <!-- Ignora config/rotas cacheadas do ambiente de dev -->
+        <env name="APP_CONFIG_CACHE" value="bootstrap/cache/config.testing.php"/>
+        <env name="APP_ROUTES_CACHE" value="bootstrap/cache/routes.testing.php"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_STORE" value="array"/>

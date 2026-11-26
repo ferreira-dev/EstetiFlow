@@ -52,10 +52,14 @@
                                 <div class="flex flex-col py-1">
                                     <span class="font-semibold">{{ slotProps.item.nome_completo }}</span>
                                     <span class="text-xs text-zinc-400">{{ slotProps.item.email || slotProps.item.telefone || 'Sem contato extra' }}</span>
+                                    <span v-if="slotProps.item.fora_carteira" class="text-xs text-zinc-500">Cliente da plataforma (ainda não atendido por você)</span>
                                 </div>
                             </template>
                         </AutoComplete>
-                        
+                        <p class="mt-2 text-xs text-zinc-500">
+                            Busca por trecho apenas entre seus clientes. Para outros clientes, digite o telefone ou e-mail completo.
+                        </p>
+
                         <div class="mt-6 flex justify-center">
                             <Button label="Cadastrar novo cliente" link icon="pi pi-plus" size="small" @click="mostrarFormPreCadastro = true" />
                         </div>
@@ -419,13 +423,11 @@ function confirmarAgendamento() {
     if (!dataHoraCompleta.value || !clienteSelecionado.value || !servicoSelecionado.value) return
     
     enviandoAgendamento.value = true
+    // Preço, duração e nome são definidos pelo backend a partir do cadastro do serviço
     router.post('/profissional/agendamentos', {
-        cliente_id:             clienteSelecionado.value.id,
-        servico_id:             servicoSelecionado.value.servico_id,
-        data_hora_inicio:       format(dataHoraCompleta.value, 'yyyy-MM-dd HH:mm:ss'),
-        preco:                  servicoSelecionado.value.preco,
-        tempo_execucao_minutos: servicoSelecionado.value.tempo_execucao_minutos,
-        nome_servico:           servicoSelecionado.value.servico.nome,
+        cliente_id:              clienteSelecionado.value.id,
+        servico_profissional_id: servicoSelecionado.value.id,
+        data_hora_inicio:        format(dataHoraCompleta.value, 'yyyy-MM-dd HH:mm:ss'),
     }, {
         onSuccess: () => {
             toast.add({ severity: 'success', summary: 'Agendamento Confirmado!', life: 4000 })

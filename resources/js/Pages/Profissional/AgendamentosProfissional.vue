@@ -251,6 +251,21 @@
                         </span>
                     </div>
                 </div>
+
+                <!-- Pré-cadastro: profissional envia o link de completar cadastro -->
+                <template v-if="!selectedAgendamento.cliente.email">
+                    <div class="border-t border-white/10 my-1"></div>
+                    <p class="text-xs text-zinc-400">
+                        Cliente pré-cadastrado. Envie o link para ele criar o acesso (válido por 48 horas).
+                    </p>
+                    <Button
+                        label="Enviar link de cadastro"
+                        icon="pi pi-whatsapp"
+                        size="small"
+                        :loading="gerandoConvite"
+                        @click="enviarConviteCadastro(selectedAgendamento.cliente)"
+                    />
+                </template>
             </div>
         </Popover>
 
@@ -269,6 +284,8 @@
 import { ref, computed } from 'vue'
 import { router } from '@inertiajs/vue3'
 import { useConfirm } from 'primevue/useconfirm'
+import { useToast } from 'primevue/usetoast'
+import axios from 'axios'
 import Button from 'primevue/button'
 import Tag from 'primevue/tag'
 import ConfirmDialog from 'primevue/confirmdialog'
@@ -291,6 +308,7 @@ const props = defineProps({
 })
 
 const confirm = useConfirm()
+const toast = useToast()
 
 // ── Estado do Popover ────────────────────────────────────────────────────────
 const op = ref()
@@ -303,6 +321,30 @@ const dialogNovoAgendamentoVisible = ref(false)
 const toggleContato = (event, ag) => {
     selectedAgendamento.value = ag
     op.value.toggle(event)
+}
+
+// ── Convite de cadastro (cliente pré-cadastrado) ────────────────────────────
+const gerandoConvite = ref(false)
+
+async function enviarConviteCadastro(cliente) {
+    gerandoConvite.value = true
+    try {
+        const { data } = await axios.post(`/profissional/clientes/${cliente.id}/convite`)
+
+        // Sem 'noopener' nas features: com ele o window.open sempre retorna null
+        const janela = data.whatsapp_url ? window.open(data.whatsapp_url, '_blank') : null
+        if (janela) janela.opener = null
+
+        // Sem telefone ou pop-up bloqueado: copia o link para envio manual
+        if (!janela) {
+            await navigator.clipboard?.writeText(data.link)
+            toast.add({ severity: 'info', summary: 'Link copiado', detail: 'Envie o link copiado ao cliente.', life: 5000 })
+        }
+    } catch (e) {
+        toast.add({ severity: 'error', summary: 'Erro', detail: 'Não foi possível gerar o link de cadastro.', life: 5000 })
+    } finally {
+        gerandoConvite.value = false
+    }
 }
 
 function formatarAno(data) {

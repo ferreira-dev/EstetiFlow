@@ -38,7 +38,7 @@
                 </div>
                 <div class="stat-card stat-card--primary">
                     <div class="relative z-10 flex items-center gap-4">
-                        <div class="flex h-12 w-12 items-center justify-center rounded-xl" style="background: rgba(var(--p-primary-500), 0.2)">
+                        <div class="flex h-12 w-12 items-center justify-center rounded-xl" style="background: color-mix(in srgb, var(--p-primary-500) 20%, transparent)">
                             <CalendarDays class="h-6 w-6" style="color: var(--p-primary-color)" />
                         </div>
                         <div>

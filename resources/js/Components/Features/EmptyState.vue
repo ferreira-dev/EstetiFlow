@@ -2,7 +2,7 @@
     <div class="glass-card flex flex-col items-center p-8 text-center lg:p-12">
         <div
             class="mb-6 flex h-20 w-20 items-center justify-center rounded-full lg:h-28 lg:w-28"
-            style="background: linear-gradient(135deg, rgba(var(--p-primary-500), 0.2), rgba(var(--p-primary-500), 0.05))"
+            style="background: linear-gradient(135deg, color-mix(in srgb, var(--p-primary-500) 20%, transparent), color-mix(in srgb, var(--p-primary-500) 5%, transparent))"
         >
             <i :class="`pi ${icone}`" class="text-3xl lg:text-4xl" style="color: var(--p-primary-color)"></i>
         </div>
