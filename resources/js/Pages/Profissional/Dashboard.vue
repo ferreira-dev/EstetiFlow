@@ -274,8 +274,9 @@ const passos = computed(() => [
 const passosConcluidos   = computed(() => passos.value.filter(p => p.feito).length)
 const onboardingCompleto = computed(() => passosConcluidos.value === passos.value.length)
 
-// O compartilhamento não é registrado no servidor: guardamos no navegador que o link já foi usado
-const CHAVE_LINK_COMPARTILHADO = 'estetiflow:link-compartilhado'
+// O compartilhamento não é registrado no servidor: guardamos no navegador que o link já foi usado.
+// A chave inclui o usuário para não herdar o passo de outro profissional no mesmo navegador.
+const CHAVE_LINK_COMPARTILHADO = `estetiflow:link-compartilhado:${usePage().props.auth?.user?.id ?? 'anonimo'}`
 const linkCompartilhado = ref(lerLinkCompartilhado())
 
 function lerLinkCompartilhado() {

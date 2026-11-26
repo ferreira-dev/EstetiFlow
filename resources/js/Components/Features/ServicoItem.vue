@@ -46,9 +46,8 @@
                 inline
                 :minDate="hoje"
                 :maxDate="dataMaxima"
-                :locale="localePtBR"
                 :disabledDates="datasBlockeadas"
-                class="w-full"
+                class="calendario-reserva w-full"
             />
         </div>
 
@@ -108,12 +107,23 @@
             Depois você volta direto para escolher o horário.
         </p>
         <div class="flex flex-col gap-2">
-            <Link :href="`/login?redirect=${urlRetornoCodificada}`">
-                <Button label="Entrar" icon="pi pi-sign-in" class="w-full" />
-            </Link>
-            <Link :href="`/registro?redirect=${urlRetornoCodificada}`">
-                <Button label="Criar conta" icon="pi pi-user-plus" severity="secondary" outlined class="w-full" />
-            </Link>
+            <!-- Button renderizado como Link (um único <a>, sem <button> aninhado) -->
+            <Button
+                :as="Link"
+                :href="`/login?redirect=${urlRetornoCodificada}`"
+                label="Entrar"
+                icon="pi pi-sign-in"
+                class="w-full"
+            />
+            <Button
+                :as="Link"
+                :href="`/registro?redirect=${urlRetornoCodificada}`"
+                label="Criar conta"
+                icon="pi pi-user-plus"
+                severity="secondary"
+                outlined
+                class="w-full"
+            />
         </div>
     </Dialog>
 </template>
@@ -154,7 +164,6 @@ const dataSelecionada    = ref(null)
 const horaSelecionada    = ref(null)
 const enviando           = ref(false)
 const hoje               = new Date()
-const localePtBR         = {}
 
 // Último dia reservável (mesma janela validada no backend)
 const dataMaxima = computed(() => {
@@ -344,8 +353,8 @@ function confirmarAgendamento() {
         // intervalos ocupados atualizados; preservar o estado mantém o drawer aberto.
         preserveState:  true,
         preserveScroll: true,
+        // O sucesso é anunciado pelo flash do backend (toast global do layout)
         onSuccess: () => {
-            toast.add({ severity: 'success', summary: 'Reserva criada!', detail: 'Seu agendamento foi confirmado.', life: 5000 })
             drawerVisivel.value  = false
             dataSelecionada.value = null
             horaSelecionada.value = null
@@ -358,3 +367,26 @@ function confirmarAgendamento() {
     })
 }
 </script>
+
+<style scoped>
+/* Calendário inline ocupa a largura do drawer sem cortar a coluna de sábado */
+.calendario-reserva :deep(.p-datepicker-panel) {
+    width: 100%;
+    min-width: 0;
+}
+
+.calendario-reserva :deep(.p-datepicker-day-view) {
+    width: 100%;
+    table-layout: fixed;
+}
+
+.calendario-reserva :deep(.p-datepicker-day-cell) {
+    padding: 0.125rem;
+}
+
+.calendario-reserva :deep(.p-datepicker-day) {
+    width: 2.25rem;
+    height: 2.25rem;
+    margin: 0 auto;
+}
+</style>

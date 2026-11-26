@@ -144,8 +144,8 @@
                         </div>
                     </div>
 
-                    <!-- CTA -->
-                    <div class="glass-card p-6 text-center" style="border-color: color-mix(in srgb, var(--p-primary-500) 20%, transparent)">
+                    <!-- CTA (só quando a agenda aceita reservas) -->
+                    <div v-if="agendaDisponivel" class="glass-card p-6 text-center" style="border-color: color-mix(in srgb, var(--p-primary-500) 20%, transparent)">
                         <h3 class="mb-2 flex items-center justify-center gap-2 text-lg font-semibold text-white">
                             <CalendarDays class="h-5 w-5" />
                             Pronto para agendar?

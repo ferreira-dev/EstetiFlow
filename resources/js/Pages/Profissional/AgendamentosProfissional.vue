@@ -360,7 +360,8 @@ async function enviarConviteCadastro(cliente) {
 function enviarConfirmacaoWhatsapp(ag) {
     const nome     = (ag.cliente.nome_completo ?? '').split(' ')[0]
     const servicos = (ag.itens ?? []).map(i => i.nome_servico).join(', ')
-    const local    = props.estabelecimento?.nome_fantasia ? ` no ${props.estabelecimento.nome_fantasia}` : ''
+    // "em" evita errar o gênero do nome ("no Barbearia", "na Studio")
+    const local    = props.estabelecimento?.nome_fantasia ? ` em ${props.estabelecimento.nome_fantasia}` : ''
 
     const linhas = [
         `Olá, ${nome}! Sua reserva${local} está confirmada:`,

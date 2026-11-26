@@ -45,21 +45,36 @@ const props = defineProps({
 const emit  = defineEmits(['compartilhado'])
 const toast = useToast()
 
+const TEMPO_LIMITE_COPIA_MS = 2000
+
 async function copiar() {
     try {
-        if (navigator.clipboard && window.isSecureContext) {
-            await navigator.clipboard.writeText(props.url)
-        } else {
-            copiarComFallback(props.url)
-        }
-        emit('compartilhado')
-        toast.add({ severity: 'success', summary: 'Link copiado!', detail: 'Agora é só colar onde quiser.', life: 3000 })
+        await copiarComClipboardApi(props.url)
     } catch {
-        toast.add({ severity: 'error', summary: 'Não foi possível copiar', detail: 'Selecione o link e copie manualmente.', life: 5000 })
+        try {
+            copiarComFallback(props.url)
+        } catch {
+            toast.add({ severity: 'error', summary: 'Não foi possível copiar', detail: 'Selecione o link e copie manualmente.', life: 5000 })
+            return
+        }
     }
+    emit('compartilhado')
+    toast.add({ severity: 'success', summary: 'Link copiado!', detail: 'Agora é só colar onde quiser.', life: 3000 })
 }
 
-// Clipboard API só existe em contexto seguro (https/localhost)
+// Clipboard API só existe em contexto seguro (https/localhost). Alguns navegadores deixam
+// a promise pendente (permissão negada ou sem resposta), por isso o tempo limite.
+function copiarComClipboardApi(texto) {
+    if (!navigator.clipboard || !window.isSecureContext) {
+        return Promise.reject(new Error('clipboard indisponível'))
+    }
+    return Promise.race([
+        navigator.clipboard.writeText(texto),
+        new Promise((_, rejeitar) => setTimeout(() => rejeitar(new Error('timeout')), TEMPO_LIMITE_COPIA_MS)),
+    ])
+}
+
+// Fallback para contexto não seguro ou Clipboard API indisponível
 function copiarComFallback(texto) {
     const campo = document.createElement('textarea')
     campo.value = texto
@@ -74,7 +89,8 @@ function copiarComFallback(texto) {
 }
 
 function compartilharWhatsapp() {
-    const local = props.nome ? ` no ${props.nome}` : ''
+    // "em" evita errar o gênero do nome ("no Barbearia", "na Studio")
+    const local = props.nome ? ` em ${props.nome}` : ''
     const mensagem = `Agende seu horário${local} pelo link: ${props.url}`
     const janela = window.open(`https://wa.me/?text=${encodeURIComponent(mensagem)}`, '_blank')
     if (janela) janela.opener = null

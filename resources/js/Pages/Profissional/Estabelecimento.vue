@@ -417,6 +417,8 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { router, useForm, usePage } from '@inertiajs/vue3'
+import { useToast } from 'primevue/usetoast'
+import { useConfirm } from 'primevue/useconfirm'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
@@ -464,7 +466,9 @@ const form = useForm({
 })
 
 // Preview ao vivo: o painel assume a cor selecionada; ao sair sem salvar, volta à cor salva
-const page = usePage()
+const page    = usePage()
+const toast   = useToast()
+const confirm = useConfirm()
 useCorTema(() => form.cor_primaria, { aoSair: () => page.props.corTema })
 
 const baseUrl = window.location.origin
@@ -532,25 +536,59 @@ const previaCapa = computed(() => ({
     cor_primaria:  form.cor_primaria,
 }))
 
+/**
+ * Respostas que não são Inertia (404, 413, 500…) abririam o modal de erro do Inertia
+ * por cima da tela. Durante a requisição da capa, troca o modal por um toast.
+ */
+function avisarFalhaInesperada(acao) {
+    return router.on('invalid', (evento) => {
+        evento.preventDefault()
+        const status = evento.detail.response?.status
+        const detalhe = status === 413
+            ? 'A imagem é grande demais para o servidor. Envie um arquivo menor.'
+            : `Não foi possível ${acao}. Tente novamente em instantes.`
+        toast.add({ severity: 'error', summary: 'Erro na foto de capa', detail: detalhe, life: 6000 })
+    })
+}
+
 function enviarCapa(event) {
     const arquivo = event.files?.[0]
     if (!arquivo) return
 
     enviandoCapa.value = true
+    const pararDeOuvir = avisarFalhaInesperada('enviar a foto')
     router.post('/profissional/estabelecimento/capa', { capa: arquivo }, {
         forceFormData:  true,
         preserveScroll: true,
         preserveState:  true,
-        onFinish: () => { enviandoCapa.value = false },
+        onFinish: () => {
+            pararDeOuvir()
+            enviandoCapa.value = false
+        },
     })
 }
 
 function removerCapa() {
-    removendoCapa.value = true
-    router.delete('/profissional/estabelecimento/capa', {
-        preserveScroll: true,
-        preserveState:  true,
-        onFinish: () => { removendoCapa.value = false },
+    confirm.require({
+        header: 'Remover foto de capa?',
+        message: 'Sua página pública passará a usar a cor da marca com as iniciais do estabelecimento.',
+        icon: 'pi pi-exclamation-triangle',
+        rejectLabel: 'Voltar',
+        acceptLabel: 'Remover',
+        rejectProps: { severity: 'secondary', outlined: true },
+        acceptProps: { severity: 'danger' },
+        accept: () => {
+            removendoCapa.value = true
+            const pararDeOuvir = avisarFalhaInesperada('remover a foto')
+            router.delete('/profissional/estabelecimento/capa', {
+                preserveScroll: true,
+                preserveState:  true,
+                onFinish: () => {
+                    pararDeOuvir()
+                    removendoCapa.value = false
+                },
+            })
+        },
     })
 }
 
