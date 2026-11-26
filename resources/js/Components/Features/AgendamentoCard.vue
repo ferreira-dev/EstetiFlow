@@ -191,14 +191,9 @@ function confirmarCancelamento() {
         accept: () => {
             cancelando.value = true
             router.delete(`/agendamentos/${props.agendamento.id}`, {
+                // O sucesso é anunciado pelo flash do backend (toast global do layout)
                 onSuccess: () => {
                     drawerVisivel.value = false
-                    toast.add({
-                        severity: 'success',
-                        summary: 'Reserva cancelada',
-                        detail: 'Sua reserva foi cancelada com sucesso.',
-                        life: 4000
-                    })
                 },
                 onError: () => {
                     toast.add({

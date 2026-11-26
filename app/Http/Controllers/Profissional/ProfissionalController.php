@@ -7,6 +7,7 @@ use App\Models\Estabelecimento;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -62,6 +63,8 @@ class ProfissionalController extends Controller
             'cor_primaria'       => ['required', Rule::in(Estabelecimento::CORES_PRIMARIAS)],
             'cnpj' => ['nullable', 'string', 'max:14'],
             'descricao' => ['nullable', 'string'],
+            'caracteristicas'   => ['nullable', 'array'],
+            'caracteristicas.*' => ['string', 'distinct', Rule::in(Estabelecimento::CARACTERISTICAS)],
             'telefone_principal' => ['required', 'string', 'max:20'],
             'telefone_secundario' => ['nullable', 'string', 'max:20'],
             'cep' => ['required', 'string', 'max:8'],
@@ -72,6 +75,8 @@ class ProfissionalController extends Controller
             'cidade' => ['required', 'string', 'max:100'],
             'estado' => ['required', 'string', 'max:2'],
         ]);
+
+        $validated['caracteristicas'] = array_values($validated['caracteristicas'] ?? []);
 
         // Upsert do estabelecimento
         if ($profissional->estabelecimento_id) {
@@ -85,6 +90,58 @@ class ProfissionalController extends Controller
 
         return redirect()->route('profissional.estabelecimento')
             ->with('success', 'Dados do estabelecimento salvos com sucesso!');
+    }
+
+    /**
+     * Envia/substitui a foto de capa do estabelecimento (disk `public`).
+     */
+    public function salvarCapa(Request $request): RedirectResponse
+    {
+        $estabelecimento = Auth::user()->profissional?->estabelecimento;
+
+        if (!$estabelecimento) {
+            return back()->with('error', 'Cadastre os dados do estabelecimento antes de enviar a capa.');
+        }
+
+        $request->validate([
+            'capa' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048', 'dimensions:min_width=600,min_height=300'],
+        ], [
+            'capa.max'        => 'A imagem deve ter no máximo 2 MB.',
+            'capa.dimensions' => 'A imagem deve ter pelo menos 600 × 300 pixels.',
+        ]);
+
+        $caminho = $request->file('capa')->store(Estabelecimento::PASTA_CAPAS, 'public');
+
+        $this->removerArquivoCapa($estabelecimento);
+        // Caminho relativo: funciona independente do APP_URL (ngrok, domínio de produção etc.)
+        $estabelecimento->update(['foto_capa_url' => '/storage/' . $caminho]);
+
+        return back()->with('success', 'Foto de capa atualizada!');
+    }
+
+    /**
+     * Remove a foto de capa (a página volta ao layout com a cor da marca).
+     */
+    public function removerCapa(): RedirectResponse
+    {
+        $estabelecimento = Auth::user()->profissional?->estabelecimento;
+
+        if ($estabelecimento) {
+            $this->removerArquivoCapa($estabelecimento);
+            $estabelecimento->update(['foto_capa_url' => null]);
+        }
+
+        return back()->with('success', 'Foto de capa removida.');
+    }
+
+    /** Apaga do disco apenas capas enviadas por upload (nunca URLs externas antigas). */
+    private function removerArquivoCapa(Estabelecimento $estabelecimento): void
+    {
+        $prefixo = '/storage/' . Estabelecimento::PASTA_CAPAS . '/';
+
+        if ($estabelecimento->foto_capa_url && str_starts_with($estabelecimento->foto_capa_url, $prefixo)) {
+            Storage::disk('public')->delete(substr($estabelecimento->foto_capa_url, strlen('/storage/')));
+        }
     }
 
     private function gerarUrlPersonalizadaUnica(string $baseSlug, ?int $ignorarId = null): string

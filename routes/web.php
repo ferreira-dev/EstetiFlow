@@ -69,6 +69,8 @@ Route::middleware(['auth', 'role:profissional'])
         // Estabelecimento
         Route::get('/estabelecimento', [ProfissionalController::class, 'estabelecimento'])->name('estabelecimento');
         Route::post('/estabelecimento', [ProfissionalController::class, 'salvarEstabelecimento'])->name('estabelecimento.salvar');
+        Route::post('/estabelecimento/capa', [ProfissionalController::class, 'salvarCapa'])->middleware('throttle:10,1')->name('estabelecimento.capa');
+        Route::delete('/estabelecimento/capa', [ProfissionalController::class, 'removerCapa'])->name('estabelecimento.capa.remover');
 
         // Serviços
         Route::get('/servicos', [ServicoController::class, 'index'])->name('servicos');

@@ -37,7 +37,15 @@ class AgendamentoProfissionalController extends Controller
 
         $agendamentos = $this->service->listarDoProfissional($profissional->id, $filtros);
 
+        // Dados usados na mensagem pronta de confirmação pelo WhatsApp
+        $est = $profissional->estabelecimento;
+        $estabelecimento = $est ? [
+            'nome_fantasia' => $est->nome_fantasia,
+            'endereco'      => collect([$est->logradouro, $est->numero, $est->bairro, $est->cidade])->filter()->join(', '),
+        ] : null;
+
         return Inertia::render('Profissional/AgendamentosProfissional', [
+            'estabelecimento'       => $estabelecimento,
             'agendamentos'          => $agendamentos,
             'filtros'               => $filtros,
             'servicos'              => $profissional->servicosProfissionais()->where('ativo', true)->with('servico')->get(),

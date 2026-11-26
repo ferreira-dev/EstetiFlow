@@ -28,7 +28,7 @@
         </div>
 
         <!-- Stats -->
-        <div v-if="resultados.length > 0" class="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-6">
+        <div v-if="resultados.length > 0" class="mb-8 grid grid-cols-2 gap-3 lg:gap-6">
             <div class="stat-card stat-card--primary">
                 <div class="relative z-10 flex items-center gap-3">
                     <div class="flex h-10 w-10 items-center justify-center rounded-xl" style="background: color-mix(in srgb, var(--p-primary-500) 20%, transparent)">
@@ -40,17 +40,6 @@
                     </div>
                 </div>
             </div>
-            <div class="stat-card stat-card--warning">
-                <div class="relative z-10 flex items-center gap-3">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-yellow-500/20">
-                        <Star class="h-5 w-5 text-yellow-500" />
-                    </div>
-                    <div>
-                        <p class="text-2xl font-bold text-yellow-500">4.8</p>
-                        <p class="text-xs text-zinc-400">Avaliação</p>
-                    </div>
-                </div>
-            </div>
             <div class="stat-card stat-card--success">
                 <div class="relative z-10 flex items-center gap-3">
                     <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500/20">
@@ -59,17 +48,6 @@
                     <div>
                         <p class="text-2xl font-bold text-green-500">{{ totalRegioes }}</p>
                         <p class="text-xs text-zinc-400">Regiões</p>
-                    </div>
-                </div>
-            </div>
-            <div class="stat-card stat-card--info">
-                <div class="relative z-10 flex items-center gap-3">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/20">
-                        <TrendingUp class="h-5 w-5 text-blue-500" />
-                    </div>
-                    <div>
-                        <p class="text-2xl font-bold text-blue-500">98%</p>
-                        <p class="text-xs text-zinc-400">Satisfação</p>
                     </div>
                 </div>
             </div>
@@ -132,7 +110,7 @@
 <script setup>
 import { computed } from 'vue'
 import { Link } from '@inertiajs/vue3'
-import { Search, Star, MapPin, TrendingUp } from 'lucide-vue-next'
+import { Search, MapPin } from 'lucide-vue-next'
 import Button from 'primevue/button'
 import SearchBar from '@/Components/Features/SearchBar.vue'
 import EstabelecimentoCard from '@/Components/Features/EstabelecimentoCard.vue'

@@ -3,7 +3,7 @@
         <div class="flex items-center gap-3">
             <!-- Imagem -->
             <div class="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-lg" style="background: color-mix(in srgb, var(--p-primary-500) 10%, transparent)">
-                <i class="pi pi-scissors text-3xl" style="color: var(--p-primary-color)"></i>
+                <i :class="iconeCategoria(servico.categoria)" class="text-3xl" style="color: var(--p-primary-color)"></i>
             </div>
 
             <!-- Info -->
@@ -45,9 +45,9 @@
                 v-model="dataSelecionada"
                 inline
                 :minDate="hoje"
-                :locale="localePtBR"
+                :maxDate="dataMaxima"
                 :disabledDates="datasBlockeadas"
-                class="w-full"
+                class="calendario-reserva w-full"
             />
         </div>
 
@@ -99,22 +99,40 @@
     <Dialog
         v-model:visible="loginDialogVisivel"
         modal
-        header="Faça login para continuar"
+        header="Entre para reservar"
         class="w-[90%] max-w-md"
     >
         <p class="mb-4 text-sm text-zinc-400">
-            Você precisa estar logado para fazer uma reserva.
+            Para reservar <strong class="text-zinc-200">{{ servico.nome }}</strong>, entre ou crie sua conta.
+            Depois você volta direto para escolher o horário.
         </p>
-        <Link href="/login">
-            <Button label="Ir para Login" icon="pi pi-sign-in" class="w-full" />
-        </Link>
+        <div class="flex flex-col gap-2">
+            <!-- Button renderizado como Link (um único <a>, sem <button> aninhado) -->
+            <Button
+                :as="Link"
+                :href="`/login?redirect=${urlRetornoCodificada}`"
+                label="Entrar"
+                icon="pi pi-sign-in"
+                class="w-full"
+            />
+            <Button
+                :as="Link"
+                :href="`/registro?redirect=${urlRetornoCodificada}`"
+                label="Criar conta"
+                icon="pi pi-user-plus"
+                severity="secondary"
+                outlined
+                class="w-full"
+            />
+        </div>
     </Dialog>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { Link, router, usePage } from '@inertiajs/vue3'
 import { formatarMoeda } from '@/Utils/formatters'
+import { iconeCategoria } from '@/Constants/categorias'
 import { isPast, isToday, set as setDate, format } from 'date-fns'
 import Button from 'primevue/button'
 import Drawer from 'primevue/drawer'
@@ -129,6 +147,9 @@ const props = defineProps({
     estabelecimentoId:     { type: [String, Number], default: '' },
     horariosFuncionamento: { type: Array,            default: () => [] },
     bloqueios:             { type: Array,            default: () => [] },
+    // Intervalos já reservados do profissional ({ data_hora_inicio, data_hora_fim }), sem dados do cliente
+    ocupados:              { type: Array,            default: () => [] },
+    janelaReservaDias:     { type: Number,           default: 30 },
     agendaOnline:          { type: Boolean,          default: true },
     telefoneWhatsapp:      { type: String,           default: '' },
 })
@@ -143,7 +164,18 @@ const dataSelecionada    = ref(null)
 const horaSelecionada    = ref(null)
 const enviando           = ref(false)
 const hoje               = new Date()
-const localePtBR         = {}
+
+// Último dia reservável (mesma janela validada no backend)
+const dataMaxima = computed(() => {
+    const d = new Date(hoje)
+    d.setDate(d.getDate() + props.janelaReservaDias)
+    return d
+})
+
+// Intervalos ocupados convertidos uma única vez para Date
+const intervalosOcupados = computed(() =>
+    props.ocupados.map(o => ({ inicio: new Date(o.data_hora_inicio), fim: new Date(o.data_hora_fim) }))
+)
 
 // ── Gera slots de 30 min entre horaInicio e horaFim - duração ─────────────
 function gerarSlots(horaInicio, horaFim, duracaoMinutos) {
@@ -189,6 +221,11 @@ const horariosDisponiveis = computed(() => {
             if (isPast(slotDate)) return false
         }
 
+        // ── Filtra horários já reservados (considera a duração do serviço) ─
+        const slotInicio = setDate(new Date(dataSelecionada.value), { hours: h, minutes: m, seconds: 0, milliseconds: 0 })
+        const slotFim    = new Date(slotInicio.getTime() + duracao * 60_000)
+        if (intervalosOcupados.value.some(o => slotInicio < o.fim && slotFim > o.inicio)) return false
+
         // ── Filtra bloqueios ─────────────────────────────────────────
         for (const b of props.bloqueios) {
             if (!b.recorrente) {
@@ -197,9 +234,6 @@ const horariosDisponiveis = computed(() => {
 
                 const bInicio = new Date(b.data_inicio)
                 const bFim    = new Date(b.data_fim)
-
-                const slotInicio = setDate(new Date(dataSelecionada.value), { hours: h, minutes: m, seconds: 0 })
-                const slotFim    = new Date(slotInicio.getTime() + duracao * 60_000)
 
                 // Sobreposição: NOT (slotFim <= bInicio OR slotInicio >= bFim)
                 if (!(slotFim <= bInicio || slotInicio >= bFim)) return false
@@ -229,8 +263,8 @@ const datasBlockeadas = computed(() => {
         d => !props.horariosFuncionamento.some(h => h.dia_semana === d)
     )
 
-    // Gera próximos 90 dias sem funcionamento para bloquear no picker
-    for (let i = 0; i <= 90; i++) {
+    // Dias sem funcionamento dentro da janela de reserva
+    for (let i = 0; i <= props.janelaReservaDias; i++) {
         const d = new Date(hoje)
         d.setDate(d.getDate() + i)
         if (diasSemFuncionamento.includes(d.getDay())) {
@@ -268,6 +302,27 @@ const dataHoraCompleta = computed(() => {
 // Reset hora ao mudar data
 watch(dataSelecionada, () => { horaSelecionada.value = null })
 
+// Se os slots forem recarregados (ex.: conflito) e o horário escolhido sumir, limpa a seleção
+watch(horariosDisponiveis, (slots) => {
+    if (horaSelecionada.value && !slots.includes(horaSelecionada.value)) {
+        horaSelecionada.value = null
+    }
+})
+
+// ── Retorno pós-login/registro ────────────────────────────────────────────
+// Página atual + ?servico=ID: após entrar, o drawer deste serviço reabre sozinho
+const urlRetornoCodificada = computed(() => {
+    const caminho = page.url.split('?')[0]
+    return encodeURIComponent(`${caminho}?servico=${props.servico.servico_profissional_id}`)
+})
+
+onMounted(() => {
+    const servicoNaUrl = new URLSearchParams(window.location.search).get('servico')
+    if (props.agendaOnline && servicoNaUrl && Number(servicoNaUrl) === Number(props.servico.servico_profissional_id)) {
+        abrirAgendamento()
+    }
+})
+
 // ── Actions ───────────────────────────────────────────────────────────────
 function abrirAgendamento() {
     // Se agenda online desativada → redireciona para WhatsApp
@@ -294,8 +349,12 @@ function confirmarAgendamento() {
         servico_profissional_id: props.servico.servico_profissional_id,
         data_hora_inicio:        format(dataHoraCompleta.value, 'yyyy-MM-dd HH:mm:ss'),
     }, {
+        // Em erro (ex.: horário acabou de ser reservado) o back() devolve a página com os
+        // intervalos ocupados atualizados; preservar o estado mantém o drawer aberto.
+        preserveState:  true,
+        preserveScroll: true,
+        // O sucesso é anunciado pelo flash do backend (toast global do layout)
         onSuccess: () => {
-            toast.add({ severity: 'success', summary: 'Reserva criada!', detail: 'Seu agendamento foi confirmado.', life: 5000 })
             drawerVisivel.value  = false
             dataSelecionada.value = null
             horaSelecionada.value = null
@@ -308,3 +367,26 @@ function confirmarAgendamento() {
     })
 }
 </script>
+
+<style scoped>
+/* Calendário inline ocupa a largura do drawer sem cortar a coluna de sábado */
+.calendario-reserva :deep(.p-datepicker-panel) {
+    width: 100%;
+    min-width: 0;
+}
+
+.calendario-reserva :deep(.p-datepicker-day-view) {
+    width: 100%;
+    table-layout: fixed;
+}
+
+.calendario-reserva :deep(.p-datepicker-day-cell) {
+    padding: 0.125rem;
+}
+
+.calendario-reserva :deep(.p-datepicker-day) {
+    width: 2.25rem;
+    height: 2.25rem;
+    margin: 0 auto;
+}
+</style>

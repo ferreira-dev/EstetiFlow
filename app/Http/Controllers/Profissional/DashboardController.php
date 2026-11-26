@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Profissional;
 
 use App\Http\Controllers\Controller;
 use App\Models\Agendamento;
+use App\Models\Profissional;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
@@ -20,6 +21,7 @@ class DashboardController extends Controller
                 'agendamentosHoje'   => [],
                 'proximosAtendimentos' => [],
                 'stats'              => $this->statsVazias(),
+                'onboarding'         => $this->onboarding(null),
             ]);
         }
 
@@ -82,7 +84,25 @@ class DashboardController extends Controller
                 'totalSemana'         => $totalSemana,
                 'totalClientes'       => $totalClientes,
             ],
+            'onboarding'           => $this->onboarding($profissional),
         ]);
+    }
+
+    /**
+     * Passos de primeiros passos do profissional + link público da página de reserva.
+     */
+    private function onboarding(?Profissional $profissional): array
+    {
+        $estabelecimento = $profissional?->estabelecimento;
+
+        return [
+            'dados'      => $estabelecimento !== null,
+            'servicos'   => (bool) $profissional?->servicosProfissionais()->where('ativo', true)->exists(),
+            'horarios'   => (bool) $profissional?->horariosFuncionamento()->exists(),
+            'publicavel' => (bool) $estabelecimento?->isPublicavel(),
+            'link'       => $estabelecimento ? url($estabelecimento->url_publica) : null,
+            'nome'       => $estabelecimento?->nome_fantasia,
+        ];
     }
 
     private function statsVazias(): array

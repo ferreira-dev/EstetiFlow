@@ -9,12 +9,13 @@ use Illuminate\Database\Eloquent\Collection;
 class EstabelecimentoService
 {
     /**
-     * Lista todos os estabelecimentos com filtros opcionais.
+     * Lista os estabelecimentos prontos para receber reservas, com filtros opcionais.
+     * Estabelecimentos sem serviço ativo ou sem horário não aparecem (ver Estabelecimento::scopePublicavel).
      */
     public function listar(string $q = '', string $categoria = ''): Collection
     {
         return Estabelecimento::query()
-            ->where('ativo', true)
+            ->publicavel()
             ->when($q, fn ($query) => $query->where('nome_fantasia', 'like', "%{$q}%"))
             ->when($categoria, fn ($query) => $query->whereHas(
                 'profissionais.servicosProfissionais.servico',
@@ -52,7 +53,7 @@ class EstabelecimentoService
      */
     public function destaques(int $limite = 6): Collection
     {
-        return Estabelecimento::where('ativo', true)
+        return Estabelecimento::publicavel()
             ->orderByDesc('created_at')
             ->limit($limite)
             ->get();
@@ -73,6 +74,11 @@ class EstabelecimentoService
                                 ->where('recorrente', true)
                                 ->orWhere('data_fim', '>=', now())
                         ),
+                        // Intervalos ocupados dentro da janela de reserva (sem dados do cliente)
+                        'agendamentosOcupados' => fn ($q5) => $q5
+                            ->where('data_hora_fim', '>', now())
+                            ->where('data_hora_inicio', '<=', now()->addDays(AgendamentoService::JANELA_RESERVA_DIAS)->endOfDay())
+                            ->orderBy('data_hora_inicio'),
                     ]),
             ]);
     }

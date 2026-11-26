@@ -13,18 +13,7 @@
             </div>
 
             <!-- Stats Desktop -->
-            <div class="mb-8 hidden grid-cols-3 gap-6 lg:grid">
-                <div class="stat-card stat-card--warning">
-                    <div class="relative z-10 flex items-center gap-4">
-                        <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-yellow-500/20">
-                            <Star class="h-6 w-6 text-yellow-500" />
-                        </div>
-                        <div>
-                            <p class="text-2xl font-bold text-yellow-500">4.8</p>
-                            <p class="text-sm text-zinc-400">Avaliação Média</p>
-                        </div>
-                    </div>
-                </div>
+            <div class="mb-8 hidden grid-cols-2 gap-6 lg:grid">
                 <div class="stat-card stat-card--info">
                     <div class="relative z-10 flex items-center gap-4">
                         <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/20">
@@ -119,7 +108,7 @@ import { computed } from 'vue'
 import { Link, usePage } from '@inertiajs/vue3'
 import { saudacao, formatarData } from '@/Utils/formatters'
 import { CATEGORIAS_SERVICO } from '@/Constants/categorias'
-import { Star, Building, CalendarDays } from 'lucide-vue-next'
+import { Building, CalendarDays } from 'lucide-vue-next'
 import SearchBar from '@/Components/Features/SearchBar.vue'
 import CategoriaItem from '@/Components/Features/CategoriaItem.vue'
 import EstabelecimentoCard from '@/Components/Features/EstabelecimentoCard.vue'

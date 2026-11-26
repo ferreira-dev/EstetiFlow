@@ -12,13 +12,15 @@
         <div class="glass-card p-8">
             <div class="mb-6 text-center">
                 <h1 class="text-2xl font-bold text-white">Criar conta</h1>
-                <p class="mt-2 text-sm text-zinc-400">Escolha seu perfil e comece a usar a plataforma</p>
+                <p class="mt-2 text-sm text-zinc-400">
+                    {{ retornoReserva ? 'Crie sua conta para concluir a reserva' : 'Escolha seu perfil e comece a usar a plataforma' }}
+                </p>
             </div>
 
             <form @submit.prevent="handleRegistro" class="space-y-5">
 
-                <!-- Seletor de Perfil -->
-                <div class="space-y-2">
+                <!-- Seletor de Perfil (oculto quando o cadastro vem de uma reserva: sempre cliente) -->
+                <div v-if="!retornoReserva" class="space-y-2">
                     <label class="block text-sm font-medium text-zinc-300">Você é:</label>
                     <div class="grid grid-cols-2 gap-3">
                         <button
@@ -167,7 +169,7 @@
             <div class="text-center">
                 <p class="text-sm text-zinc-400">
                     Já tem uma conta?
-                    <Link href="/login" class="font-semibold transition-colors hover:text-white" style="color: var(--p-primary-color)">
+                    <Link :href="linkLogin" class="font-semibold transition-colors hover:text-white" style="color: var(--p-primary-color)">
                         Fazer login
                     </Link>
                 </p>
@@ -185,6 +187,7 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
@@ -196,6 +199,15 @@ import Message from 'primevue/message'
 import AuthLayout from '@/Layouts/AuthLayout.vue'
 
 defineOptions({ layout: AuthLayout })
+
+const props = defineProps({
+    // Caminho da página de reserva para onde o cliente volta após o cadastro (validado no backend)
+    retornoReserva: { type: String, default: null },
+})
+
+const linkLogin = computed(() =>
+    props.retornoReserva ? `/login?redirect=${encodeURIComponent(props.retornoReserva)}` : '/login'
+)
 
 const form = useForm({
     tipo:                 'cliente',

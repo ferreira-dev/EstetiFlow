@@ -7,6 +7,7 @@ import ToastService from 'primevue/toastservice'
 import ConfirmationService from 'primevue/confirmationservice'
 import Tooltip from 'primevue/tooltip'
 import Ripple from 'primevue/ripple'
+import { localePtBR } from './Constants/localePtBR'
 
 import '../css/app.css'
 import 'primeicons/primeicons.css'
@@ -30,6 +31,7 @@ createInertiaApp({
                 },
             },
             ripple: true,
+            locale: localePtBR,
         })
         app.use(ToastService)
         app.use(ConfirmationService)

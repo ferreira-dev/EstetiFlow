@@ -7,6 +7,49 @@
             <p class="mt-1 text-sm text-zinc-400 capitalize">{{ dataHoje }}</p>
         </div>
 
+        <!-- Primeiros passos (some quando o estabelecimento fica pronto para reservas) -->
+        <div v-if="!onboardingCompleto" class="glass-card space-y-4 p-5 border border-amber-500/30">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                    <p class="font-semibold text-white">Primeiros passos</p>
+                    <p class="text-xs text-zinc-400">
+                        Complete os passos abaixo para sua página aparecer na busca e receber reservas.
+                    </p>
+                </div>
+                <Tag :value="`${passosConcluidos}/${passos.length}`" severity="warn" />
+            </div>
+            <ol class="space-y-2">
+                <li v-for="(passo, i) in passos" :key="passo.chave">
+                    <component
+                        :is="passo.href ? Link : 'div'"
+                        :href="passo.href"
+                        class="flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors"
+                        :class="passo.feito
+                            ? 'border-white/5 bg-white/[0.02] text-zinc-500'
+                            : 'border-white/10 bg-zinc-900/40 text-zinc-200 hover:border-white/20'"
+                    >
+                        <span
+                            class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                            :class="passo.feito ? 'bg-green-500/20 text-green-400' : 'bg-white/10 text-zinc-300'"
+                        >
+                            <i v-if="passo.feito" class="pi pi-check text-xs"></i>
+                            <template v-else>{{ i + 1 }}</template>
+                        </span>
+                        <span class="flex-1 text-sm" :class="{ 'line-through': passo.feito }">{{ passo.titulo }}</span>
+                        <i v-if="passo.href && !passo.feito" class="pi pi-chevron-right text-xs text-zinc-500"></i>
+                    </component>
+                </li>
+            </ol>
+        </div>
+
+        <!-- Link público: o produto do profissional -->
+        <CompartilharLink
+            v-if="onboarding.link"
+            :url="onboarding.link"
+            :nome="onboarding.nome"
+            @compartilhado="marcarLinkCompartilhado"
+        />
+
         <!-- Stat Cards -->
         <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
             <div class="glass-card flex flex-col gap-3 p-5">
@@ -204,11 +247,12 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { Link, router, usePage } from '@inertiajs/vue3'
 import Button from 'primevue/button'
 import Tag from 'primevue/tag'
 import DashboardLayout from '@/Layouts/DashboardLayout.vue'
+import CompartilharLink from '@/Components/Profissional/CompartilharLink.vue'
 import { formatarHora, formatarMoeda } from '@/Utils/formatters'
 
 defineOptions({ layout: DashboardLayout })
@@ -217,7 +261,32 @@ const props = defineProps({
     agendamentosHoje:     { type: Array,  default: () => [] },
     proximosAtendimentos: { type: Array,  default: () => [] },
     stats:                { type: Object, default: () => ({}) },
+    onboarding:           { type: Object, default: () => ({}) },
 })
+
+// ── Primeiros passos ────────────────────────────────────────────────────────
+const passos = computed(() => [
+    { chave: 'dados',    titulo: 'Cadastrar os dados do estabelecimento', feito: !!props.onboarding.dados,    href: '/profissional/estabelecimento' },
+    { chave: 'servicos', titulo: 'Cadastrar pelo menos 1 serviço',        feito: !!props.onboarding.servicos, href: '/profissional/servicos' },
+    { chave: 'horarios', titulo: 'Definir seus horários de atendimento',  feito: !!props.onboarding.horarios, href: '/profissional/horarios' },
+    { chave: 'link',     titulo: 'Copiar ou compartilhar seu link (card abaixo)', feito: !!props.onboarding.publicavel && linkCompartilhado.value, href: null },
+])
+const passosConcluidos   = computed(() => passos.value.filter(p => p.feito).length)
+const onboardingCompleto = computed(() => passosConcluidos.value === passos.value.length)
+
+// O compartilhamento não é registrado no servidor: guardamos no navegador que o link já foi usado.
+// A chave inclui o usuário para não herdar o passo de outro profissional no mesmo navegador.
+const CHAVE_LINK_COMPARTILHADO = `estetiflow:link-compartilhado:${usePage().props.auth?.user?.id ?? 'anonimo'}`
+const linkCompartilhado = ref(lerLinkCompartilhado())
+
+function lerLinkCompartilhado() {
+    try { return localStorage.getItem(CHAVE_LINK_COMPARTILHADO) === '1' } catch { return false }
+}
+
+function marcarLinkCompartilhado() {
+    linkCompartilhado.value = true
+    try { localStorage.setItem(CHAVE_LINK_COMPARTILHADO, '1') } catch { /* navegação privada */ }
+}
 
 const page = usePage()
 const user = computed(() => page.props.auth?.user)

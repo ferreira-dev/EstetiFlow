@@ -58,6 +58,17 @@ class Profissional extends Model
         return $this->hasMany(Agendamento::class);
     }
 
+    /**
+     * Intervalos ocupados da agenda (sem dados do cliente) — usados na página pública
+     * para esconder horários já reservados.
+     */
+    public function agendamentosOcupados(): HasMany
+    {
+        return $this->hasMany(Agendamento::class)
+            ->select(['profissional_id', 'data_hora_inicio', 'data_hora_fim'])
+            ->whereIn('status', Agendamento::STATUS_OCUPAM_AGENDA);
+    }
+
     public function avaliacoes(): HasMany
     {
         return $this->hasMany(Avaliacao::class);

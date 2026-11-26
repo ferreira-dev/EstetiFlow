@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Estabelecimento;
+use App\Services\AgendamentoService;
 use App\Services\EstabelecimentoService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -47,7 +48,7 @@ class EstabelecimentoController extends Controller
     {
         // Agrega horários de todos os profissionais (união por dia da semana)
         $horariosFuncionamento = collect($estabelecimento->profissionais)
-            ->flatMap(fn ($p) => $p->horarios_funcionamento ?? collect())
+            ->flatMap(fn ($p) => $p->horariosFuncionamento ?? collect())
             ->groupBy(fn ($h) => $h->dia_semana)
             ->map(fn ($grupo, $dia) => [
                 'dia_semana' => (int) $dia,
@@ -59,6 +60,9 @@ class EstabelecimentoController extends Controller
         return Inertia::render('EstabelecimentoDetail', [
             'estabelecimento' => $estabelecimento,
             'horariosFuncionamento' => $horariosFuncionamento,
+            'janelaReservaDias' => AgendamentoService::JANELA_RESERVA_DIAS,
+            // Incompleto (sem serviço/horário): página mostra aviso "em breve" + WhatsApp
+            'agendaDisponivel' => $estabelecimento->isPublicavel(),
         ]);
     }
 }

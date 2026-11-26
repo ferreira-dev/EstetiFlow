@@ -28,11 +28,15 @@ barbearias, salões de beleza, cabeleireiros, manicure/pedicure, design de sobra
 - ✅ Visualizar e gerenciar agendamentos (confirmar/recusar/iniciar/concluir/cancelar)
 - ✅ Editar dados do estabelecimento
 - ✅ Escolher a cor da marca do estabelecimento (página pública + painel)
+- ✅ Foto de capa (upload) e comodidades marcáveis exibidas na página pública
+- ✅ Checklist de primeiros passos + "Copiar meu link"/WhatsApp no Dashboard
+- ✅ E-mail de nova reserva/cancelamento pelo cliente + botão de confirmação pelo WhatsApp
 
 **Para Clientes:**
 - ✅ Buscar estabelecimentos (nome/categoria)
 - ✅ Consultar horários disponíveis (cálculo real de disponibilidade)
-- ✅ Agendar serviços
+- ✅ Agendar serviços (até 30 dias à frente; horários ocupados ocultos; login/registro voltam ao serviço escolhido)
+- ✅ E-mail de confirmação e de cancelamento pelo profissional
 - ✅ Cancelar agendamentos
 - ✅ Consultar histórico de agendamentos
 - ✅ Editar perfil e alterar senha
@@ -41,7 +45,7 @@ barbearias, salões de beleza, cabeleireiros, manicure/pedicure, design de sobra
 - 📅 Seleção guiada de profissional no agendamento público
 - 🌍 Busca por geolocalização (proximidade)
 - ⭐ Sistema de avaliações pós-serviço
-- 📧 Notificações push/email/SMS
+- 📧 Notificações push/SMS e lembrete D-1 (e-mail transacional já existe)
 - 💎 Planos e pacotes de serviços
 - 🎁 Programas de fidelidade
 
@@ -296,6 +300,10 @@ class AgendamentoService
 | **Transições validadas** | `AgendamentoService::alterarStatus()` | Matriz de transições válidas impede saltos de status ilegais |
 | **Painel do profissional** | `GET /profissional/agendamentos` | Lista com filtro por status + ações contextuais por card |
 | **Disponibilidade real** | `AgendamentoService::verificarDisponibilidade()` | Valida: horário de funcionamento + bloqueios pontuais + bloqueios recorrentes + conflitos de agenda |
+| **Slots na página pública** | `Profissional::agendamentosOcupados` → `ServicoItem.vue` | Só intervalos ocupados (início/fim, sem dados do cliente) da janela de `JANELA_RESERVA_DIAS` (30); o front oculta slots sobrepostos. Erro de conflito mantém o drawer aberto e recarrega os ocupados |
+| **Retorno pós-login** | `?redirect=` em `/login` e `/registro` | Validado por `RetornoReserva` (só `/agendar/{slug}?servico=ID`) → `url.intended`; o drawer do serviço reabre |
+| **Notificações** | `app/Notifications/Agendamento/*` (fila, `afterCommit`) | Reserva online → profissional + cliente; cancelamento pelo cliente → profissional; cancelamento/recusa pelo profissional → cliente. Exige worker `queue:work` |
+| **Publicável** | `Estabelecimento::scopePublicavel` | Ativo + profissional com ≥ 1 serviço ativo e ≥ 1 horário. Fora disso não é listado e a página mostra "Agenda online em breve" |
 
 ### 5.4 Simplificações do MVP (a evoluir)
 
@@ -303,7 +311,7 @@ class AgendamentoService
 |----------|-----------|-------------------------------|
 | Status inicial | Criação vai direto para `confirmado` | `pendente` até profissional aceitar manualmente (infraestrutura já pronta no painel) |
 | `nao_compareceu` automático | Só via ação manual do profissional no painel | Job/queue que marca automaticamente N horas após a data passar |
-| Notificações | Não implementadas | Lembretes por push/email/SMS ao cliente e profissional |
+| Notificações | E-mails transacionais (reserva/cancelamento) + WhatsApp manual | Lembrete D-1, push/SMS |
 | Seleção de profissional | O `serviço_profissional_id` é inferido automaticamente (primeiro disponível) | Cliente escolhe explicitamente o profissional antes de selecionar o slot (Step 0 no Drawer) |
 
 ### 5.5 Regra de Exibição — "Meus Agendamentos" (Cliente)
@@ -420,7 +428,7 @@ agendamentos.profissional_id
 | Funcionalidade | Prioridade |
 |---------------|-----------|
 | **Avaliações** — nota + comentário pós-serviço | 🟢 Baixa (pós-MVP) |
-| **Notificações** — lembretes e avisos | 🟢 Baixa (pós-MVP) |
+| **Lembretes** (D-1) e push/SMS | 🟢 Baixa (pós-MVP) |
 | **Job automático `nao_compareceu`** — marcar automaticamente quando data passa | 🟡 Média |
 | **Busca por geolocalização** — proximidade via lat/lng | 🟡 Média |
 
@@ -448,6 +456,7 @@ agendamentos.profissional_id
 - DashboardLayout com menu lateral (7 itens)
 - 6 containers Docker (webserver, php-fpm, node, mysql, redis, mailhog)
 - Cor da marca por estabelecimento (tema primário dinâmico do Aura) — ver seção 9
+- Task 2 de prontidão (fluxo de reserva/UX): slots ocupados, retorno pós-login, e-mails de reserva, comodidades/capa, onboarding e link público
 - Task 1 de prontidão (segurança e integridade): snapshot de preço garantido no backend, busca de clientes isolada por carteira, convite de cadastro com token seguro, lock contra reserva dupla, fuso/idioma BR, recuperação de senha e throttle de login
 
 ### Fase Atual: Polimento do Fluxo do Cliente

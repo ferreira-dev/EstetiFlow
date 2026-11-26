@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Perfil;
 use App\Models\Profissional;
 use App\Models\User;
+use App\Support\RetornoReserva;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,9 +17,17 @@ use Inertia\Response;
 
 class RegistroController extends Controller
 {
-    public function create(): Response
+    public function create(Request $request): Response
     {
-        return Inertia::render('Registro');
+        // Registro iniciado a partir de uma reserva: formulário só de cliente + retorno à página
+        $retorno = RetornoReserva::validar($request->query('redirect'));
+        if ($retorno) {
+            $request->session()->put('url.intended', url($retorno));
+        }
+
+        return Inertia::render('Registro', [
+            'retornoReserva' => $retorno,
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -76,6 +85,9 @@ class RegistroController extends Controller
             // reconheça o papel imediatamente no próximo request
             app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
+            // Profissional segue para o onboarding, ignorando um eventual retorno de reserva
+            $request->session()->forget('url.intended');
+
             return redirect('/profissional/estabelecimento')
                 ->with('success', 'Cadastro realizado! Preencha os dados do seu estabelecimento.');
         }
@@ -84,7 +96,8 @@ class RegistroController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->route('home')
+        // Se veio de uma reserva, volta para a página do estabelecimento com o serviço aberto
+        return redirect()->intended(route('home'))
             ->with('success', 'Bem-vindo(a) ao EstetiFlow, ' . $user->nome_completo . '!');
     }
 }

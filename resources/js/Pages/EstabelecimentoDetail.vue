@@ -2,12 +2,7 @@
     <div>
         <!-- Hero Image -->
         <div class="relative h-72 w-full lg:h-[500px]">
-            <img
-                v-if="estabelecimento"
-                :src="estabelecimento.foto_capa_url || 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=800'"
-                :alt="estabelecimento.nome_fantasia"
-                class="h-full w-full object-cover"
-            />
+            <CapaEstabelecimento v-if="estabelecimento" :estabelecimento="estabelecimento" tamanho="lg" />
             <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20"></div>
 
             <!-- Nav buttons -->
@@ -18,17 +13,6 @@
             <!-- Info overlay -->
             <div v-if="estabelecimento" class="absolute right-0 bottom-0 left-0 p-5 lg:p-8">
                 <div class="mx-auto max-w-7xl">
-                    <div class="mb-2 flex items-center gap-2">
-                        <Tag>
-                            <div class="flex items-center gap-1">
-                                <Star :size="12" class="fill-white text-white" />
-                                {{ estabelecimento.avaliacao || 4.9 }}
-                            </div>
-                        </Tag>
-                        <Tag severity="secondary">
-                            {{ estabelecimento.totalAvaliacoes || 0 }} avaliações
-                        </Tag>
-                    </div>
                     <h1 class="mb-2 text-2xl font-bold text-white lg:text-4xl">{{ estabelecimento.nome_fantasia }}</h1>
                     <div class="flex items-center gap-2 text-white/90">
                         <MapPin :size="16" />
@@ -46,43 +30,53 @@
 
                 <!-- Coluna Principal -->
                 <div class="space-y-8 lg:col-span-8">
-                    <!-- Stats mobile -->
-                    <div class="grid grid-cols-3 gap-3 lg:hidden">
-                        <div class="glass-card p-4 text-center">
-                            <Star class="mx-auto mb-1 h-5 w-5 text-yellow-500" />
-                            <p class="text-lg font-bold text-white">{{ estabelecimento.avaliacao }}</p>
-                            <p class="text-xs text-zinc-400">Avaliação</p>
-                        </div>
-                        <div class="glass-card p-4 text-center">
-                            <Users class="mx-auto mb-1 h-5 w-5 text-blue-500" />
-                            <p class="text-lg font-bold text-white">{{ estabelecimento.totalAvaliacoes }}</p>
-                            <p class="text-xs text-zinc-400">Clientes</p>
-                        </div>
-                        <div class="glass-card p-4 text-center">
-                            <Award class="mx-auto mb-1 h-5 w-5 text-green-500" />
-                            <p class="text-lg font-bold text-white">5+</p>
-                            <p class="text-xs text-zinc-400">Anos</p>
-                        </div>
-                    </div>
-
-                    <!-- Sobre -->
-                    <div class="glass-card p-6">
+                    <!-- Sobre (só aparece se o dono preencheu descrição ou comodidades) -->
+                    <div v-if="estabelecimento.descricao || caracteristicas.length" class="glass-card p-6">
                         <h2 class="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
                             <Info class="h-5 w-5" style="color: var(--p-primary-color)" />
                             Sobre o Estabelecimento
                         </h2>
-                        <p class="leading-relaxed text-zinc-400 lg:text-lg">{{ estabelecimento.descricao }}</p>
+                        <p v-if="estabelecimento.descricao" class="whitespace-pre-line leading-relaxed text-zinc-400 lg:text-lg">
+                            {{ estabelecimento.descricao }}
+                        </p>
 
-                        <div class="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-3">
-                            <div v-for="item in caracteristicas" :key="item" class="flex items-center gap-2 text-sm text-zinc-300">
-                                <CheckCircle class="h-4 w-4 text-green-500" />
-                                <span>{{ item }}</span>
+                        <div
+                            v-if="caracteristicas.length"
+                            class="grid grid-cols-2 gap-4 lg:grid-cols-3"
+                            :class="{ 'mt-6': estabelecimento.descricao }"
+                        >
+                            <div v-for="item in caracteristicas" :key="item.valor" class="flex items-center gap-2 text-sm text-zinc-300">
+                                <i :class="item.icone" class="text-sm" style="color: var(--p-primary-color)"></i>
+                                <span>{{ item.label }}</span>
                             </div>
                         </div>
                     </div>
 
+                    <!-- Agenda ainda não configurada (sem serviço ou horário) -->
+                    <div v-if="!agendaDisponivel" class="glass-card p-8 text-center">
+                        <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary-500/10">
+                            <i class="pi pi-calendar-clock text-2xl" style="color: var(--p-primary-color)"></i>
+                        </div>
+                        <h2 class="mb-1 text-lg font-semibold text-white">Agenda online em breve</h2>
+                        <p class="mx-auto max-w-md text-sm text-zinc-400">
+                            {{ estabelecimento.nome_fantasia }} ainda está configurando os serviços e horários.
+                            Enquanto isso, fale direto pelo WhatsApp.
+                        </p>
+                        <Button
+                            v-if="whatsappUrl"
+                            as="a"
+                            :href="whatsappUrl"
+                            target="_blank"
+                            rel="noopener"
+                            label="Chamar no WhatsApp"
+                            icon="pi pi-whatsapp"
+                            severity="success"
+                            class="mt-5"
+                        />
+                    </div>
+
                     <!-- Serviços -->
-                    <div class="glass-card p-6">
+                    <div v-else class="glass-card p-6">
                         <div class="mb-4 flex items-center justify-between">
                             <h2 class="flex items-center gap-2 text-lg font-semibold text-white">
                                 <CalendarDays class="h-5 w-5" style="color: var(--p-primary-color)" />
@@ -100,6 +94,8 @@
                                     :estabelecimento-id="estabelecimento.id"
                                     :horarios-funcionamento="prof.horarios_funcionamento ?? []"
                                     :bloqueios="prof.bloqueios_agenda ?? []"
+                                    :ocupados="prof.agendamentos_ocupados ?? []"
+                                    :janela-reserva-dias="janelaReservaDias"
                                     :agenda-online="estabelecimento.agenda_online"
                                     :telefone-whatsapp="estabelecimento.telefone_principal ?? ''"
                                 />
@@ -110,28 +106,6 @@
 
                 <!-- Sidebar -->
                 <div class="mt-8 space-y-6 lg:col-span-4 lg:mt-0">
-                    <!-- Stats Desktop -->
-                    <div class="hidden gap-4 lg:grid lg:grid-cols-2">
-                        <div class="stat-card stat-card--warning">
-                            <div class="relative z-10 flex flex-col items-center gap-2 text-center">
-                                <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-yellow-500/20">
-                                    <Star class="h-6 w-6 text-yellow-500" />
-                                </div>
-                                <p class="text-2xl font-bold text-yellow-500">{{ estabelecimento.avaliacao }}</p>
-                                <p class="text-xs text-zinc-400">Avaliação Média</p>
-                            </div>
-                        </div>
-                        <div class="stat-card stat-card--info">
-                            <div class="relative z-10 flex flex-col items-center gap-2 text-center">
-                                <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/20">
-                                    <Users class="h-6 w-6 text-blue-500" />
-                                </div>
-                                <p class="text-2xl font-bold text-blue-500">+{{ estabelecimento.totalAvaliacoes }}</p>
-                                <p class="text-xs text-zinc-400">Clientes Atendidos</p>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Horários -->
                     <div class="glass-card p-6">
                         <h3 class="mb-4 flex items-center gap-2 font-semibold text-white">
@@ -170,8 +144,8 @@
                         </div>
                     </div>
 
-                    <!-- CTA -->
-                    <div class="glass-card p-6 text-center" style="border-color: color-mix(in srgb, var(--p-primary-500) 20%, transparent)">
+                    <!-- CTA (só quando a agenda aceita reservas) -->
+                    <div v-if="agendaDisponivel" class="glass-card p-6 text-center" style="border-color: color-mix(in srgb, var(--p-primary-500) 20%, transparent)">
                         <h3 class="mb-2 flex items-center justify-center gap-2 text-lg font-semibold text-white">
                             <CalendarDays class="h-5 w-5" />
                             Pronto para agendar?
@@ -194,10 +168,12 @@
 <script setup>
 import { computed } from 'vue'
 import { router } from '@inertiajs/vue3'
-import { Star, MapPin, Users, Award, Info, CheckCircle, CalendarDays, Clock, Phone } from 'lucide-vue-next'
+import { MapPin, Info, CalendarDays, Clock, Phone } from 'lucide-vue-next'
 import Button from 'primevue/button'
 import Tag from 'primevue/tag'
 import ServicoItem from '@/Components/Features/ServicoItem.vue'
+import CapaEstabelecimento from '@/Components/Features/CapaEstabelecimento.vue'
+import { caracteristicasSelecionadas } from '@/Constants/caracteristicas'
 import TelefoneItem from '@/Components/Features/TelefoneItem.vue'
 import DefaultLayout from '@/Layouts/DefaultLayout.vue'
 import { useCorTema } from '@/Composables/useCorTema'
@@ -207,6 +183,15 @@ defineOptions({ layout: DefaultLayout })
 const props = defineProps({
     estabelecimento:       { type: Object, default: null },
     horariosFuncionamento: { type: Array,  default: () => [] },
+    janelaReservaDias:     { type: Number, default: 30 },
+    agendaDisponivel:      { type: Boolean, default: true },
+})
+
+const whatsappUrl = computed(() => {
+    const telefone = (props.estabelecimento?.telefone_principal ?? '').replace(/\D/g, '')
+    if (!telefone) return null
+    const texto = `Olá! Vi a página do ${props.estabelecimento.nome_fantasia} e gostaria de agendar um horário.`
+    return `https://wa.me/55${telefone}?text=${encodeURIComponent(texto)}`
 })
 
 // Aplica a cor da marca escolhida pelo dono; volta ao padrão ao sair da página
@@ -223,10 +208,8 @@ const servicos = computed(() => {
     )
 })
 
-const caracteristicas = [
-    'Wi-Fi Gratuito', 'Estacionamento', 'Cartão de Crédito',
-    'Produtos Premium', 'Ambiente Climatizado', 'Profissionais Qualificados'
-]
+// Comodidades marcadas pelo dono no painel (nada fixo no código)
+const caracteristicas = computed(() => caracteristicasSelecionadas(props.estabelecimento?.caracteristicas))
 
 const DIAS_NOMES = {
     0: 'Domingo', 1: 'Segunda-feira', 2: 'Terça-feira',
